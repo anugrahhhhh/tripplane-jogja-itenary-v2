@@ -48,5 +48,7 @@
 
             <a href="{{ route('login') }}" class="mt-6 text-sm text-primary-200 hover:text-white">Bukan Admin? Masuk sebagai wisatawan &rarr;</a>
         </div>
+
+        @include('partials.clear-page-cache')
     </body>
 </html>

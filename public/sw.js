@@ -2,7 +2,7 @@
 // itinerary) supaya tetap bisa diakses saat sinyal lemah/offline, dan
 // tampilkan halaman fallback kalau suatu halaman belum pernah tersimpan.
 
-const CACHE_VERSION = 'jogjatrip-v1';
+const CACHE_VERSION = 'jogjatrip-v2';
 const PAGES_CACHE = `${CACHE_VERSION}-pages`;
 const ASSETS_CACHE = `${CACHE_VERSION}-assets`;
 const OFFLINE_URL = '/offline';
@@ -55,8 +55,13 @@ self.addEventListener('fetch', (event) => {
 async function networkFirstForPages(request) {
     try {
         const response = await fetch(request);
-        const cache = await caches.open(PAGES_CACHE);
-        cache.put(request, response.clone());
+
+        // Jangan simpan halaman pribadi (no-store), hasil redirect, atau respons non-basic.
+        const cacheControl = response.headers.get('Cache-Control') || '';
+        if (response.ok && !response.redirected && response.type === 'basic' && !cacheControl.includes('no-store')) {
+            const cache = await caches.open(PAGES_CACHE);
+            cache.put(request, response.clone());
+        }
 
         return response;
     } catch (error) {

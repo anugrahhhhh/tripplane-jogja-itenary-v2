@@ -69,4 +69,6 @@
     <p class="mt-2 text-center text-xs text-ink/40">
         <a href="{{ route('admin.login') }}" class="hover:underline">Masuk sebagai Admin</a>
     </p>
+
+    @include('partials.clear-page-cache')
 </x-auth-split-layout>
