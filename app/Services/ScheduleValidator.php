@@ -34,7 +34,7 @@ class ScheduleValidator
             }
 
             $closedDays = $item->destination->closed_days;
-            if ($date !== null && ! empty($closedDays) && in_array($date->isoWeekday(), $closedDays, true)) {
+            if ($date !== null && ! empty($closedDays) && in_array($date->isoWeekday(), array_map('intval', $closedDays), true)) {
                 $warnings[$item->id][] = 'Tutup setiap hari '.Weekday::name($date->isoWeekday()).'.';
             }
         }

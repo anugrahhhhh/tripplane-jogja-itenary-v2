@@ -52,6 +52,16 @@ class ClosedDaysTest extends TestCase
             ->assertSee('Tutup setiap hari Senin.');
     }
 
+    public function test_warning_when_closed_days_stored_as_strings(): void
+    {
+        [$user, $itinerary, $item] = $this->itineraryWith('2026-11-02', [1]);
+        $item->destination->forceFill(['closed_days' => ['1']])->save();
+
+        $this->actingAs($user)->get(route('itineraries.show', $itinerary))
+            ->assertOk()
+            ->assertSee('Tutup setiap hari Senin.');
+    }
+
     public function test_warning_uses_correct_date_across_weeks(): void
     {
         // 2026-11-01 Minggu; hari ke-2 = Senin.

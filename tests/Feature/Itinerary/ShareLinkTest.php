@@ -30,6 +30,15 @@ class ShareLinkTest extends TestCase
         return $itinerary;
     }
 
+    public function test_shared_page_has_itinerary_title(): void
+    {
+        $itinerary = $this->sharedItinerary();
+
+        $this->get(route('itineraries.shared', $itinerary->share_token))
+            ->assertOk()
+            ->assertSee('<title>Liburan Publik Jogja - ', false);
+    }
+
     public function test_owner_can_create_share_link(): void
     {
         $itinerary = Itinerary::factory()->create();

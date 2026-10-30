@@ -16,6 +16,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('itineraries', function (Blueprint $table) {
+            $table->dropUnique(['share_token']);
             $table->dropColumn('share_token');
         });
     }
