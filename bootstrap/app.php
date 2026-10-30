@@ -25,6 +25,10 @@ return Application::configure(basePath: dirname(__DIR__))
             EnsureTwoFactorSetUp::class,
         ]);
 
+        // Logout paksa (idle) dari beberapa tab sekaligus: tab kedua membawa token
+        // CSRF dari sesi yang sudah dihapus dan akan kena 419. Dampak logout paksa kecil.
+        $middleware->validateCsrfTokens(except: ['logout']);
+
         // Tamu yang belum masuk dan membuka halaman /admin/* diarahkan ke
         // pintu masuk Admin, bukan halaman masuk wisatawan, agar pemisahan
         // akses tetap konsisten walau lewat akses langsung ke URL.

@@ -4,6 +4,7 @@ namespace Tests\Feature\Auth;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\URL;
 use Tests\TestCase;
 
 class IdleTimeoutTest extends TestCase
@@ -144,5 +145,35 @@ class IdleTimeoutTest extends TestCase
 
         $this->get('/profile')->assertRedirect(route('login'))
             ->assertSessionHas('status', 'Kamu keluar otomatis karena tidak aktif selama 1 menit.');
+    }
+
+    public function test_not_me_link_still_works_after_idle_logout(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user)->get('/profile')->assertOk();
+        $link = URL::temporarySignedRoute('security.not-me', now()->addHours(24), ['user' => $user->id]);
+
+        $this->travel(301)->seconds();
+
+        $this->get($link)->assertOk()->assertSee('Ya, amankan akun saya');
+        $this->assertGuest();
+    }
+
+    public function test_guest_logout_post_without_csrf_token_redirects_to_login(): void
+    {
+        // CSRF dimatikan otomatis saat testing; paksa aktif agar perilaku produksi teruji
+        $this->app['env'] = 'local';
+
+        $this->post(route('logout'), ['reason' => 'idle'])->assertRedirect(route('login'));
+    }
+
+    public function test_logout_post_with_stale_csrf_token_does_not_return_419(): void
+    {
+        $this->app['env'] = 'local';
+        $this->actingAs(User::factory()->create());
+
+        $this->post(route('logout'), ['reason' => 'idle', '_token' => 'stale'])
+            ->assertRedirect(route('login'));
+        $this->assertGuest();
     }
 }

@@ -39,6 +39,11 @@ class LogoutIdleSessions
             $session->invalidate();
             $session->regenerateToken();
 
+            // Link "Bukan saya" berlaku untuk tamu; jangan dibelokkan ke halaman login
+            if ($request->routeIs('security.not-me', 'security.not-me.confirm')) {
+                return $next($request);
+            }
+
             if ($request->expectsJson()) {
                 return response()->json(['reason' => 'idle_timeout'], 401);
             }
