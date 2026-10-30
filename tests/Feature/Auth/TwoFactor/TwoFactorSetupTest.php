@@ -182,4 +182,16 @@ class TwoFactorSetupTest extends TestCase
             ->get(route('two-factor.recovery-codes'))
             ->assertRedirect(route('home'));
     }
+
+    public function test_setup_page_includes_idle_warning_but_guest_pages_do_not(): void
+    {
+        $this->actingAs($this->userWithoutTwoFactor())
+            ->get(route('two-factor.setup'))
+            ->assertOk()
+            ->assertSee('x-data="idleTimeout"', false);
+
+        auth()->logout();
+
+        $this->get(route('login'))->assertOk()->assertDontSee('x-data="idleTimeout"', false);
+    }
 }

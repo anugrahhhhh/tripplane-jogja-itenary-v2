@@ -25,5 +25,9 @@
 
             <a href="{{ route('home') }}" class="mt-6 text-sm text-ink/50 hover:text-primary">&larr; Kembali ke Beranda</a>
         </div>
+
+        @auth
+            @include('partials.idle-timeout')
+        @endauth
     </body>
 </html>
