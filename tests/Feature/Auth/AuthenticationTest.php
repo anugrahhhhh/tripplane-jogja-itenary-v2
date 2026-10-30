@@ -26,8 +26,9 @@ class AuthenticationTest extends TestCase
             'password' => 'password',
         ]);
 
-        $this->assertAuthenticated();
-        $response->assertRedirect(route('dashboard', absolute: false));
+        // Password benar belum cukup: user baru login setelah lolos challenge 2FA.
+        $this->assertGuest();
+        $response->assertRedirect(route('two-factor.challenge'));
     }
 
     public function test_users_can_not_authenticate_with_invalid_password(): void

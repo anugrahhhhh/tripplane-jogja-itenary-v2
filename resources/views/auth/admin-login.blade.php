@@ -40,11 +40,6 @@
                         <x-input-error :messages="$errors->get('password')" class="mt-2" />
                     </div>
 
-                    <label class="inline-flex items-center gap-2 text-sm text-ink/60">
-                        <input type="checkbox" name="remember" class="rounded border-ink/20 text-primary focus:ring-primary">
-                        Ingat saya
-                    </label>
-
                     <button type="submit" class="w-full rounded-xl bg-primary-900 py-3 text-sm font-semibold text-white hover:bg-ink transition">
                         Masuk ke Panel Admin
                     </button>

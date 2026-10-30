@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Models\User;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -36,21 +37,53 @@ class LoginRequest extends FormRequest
     /**
      * Attempt to authenticate the request's credentials.
      *
+     * Masih dipakai pintu masuk Admin sampai Task 7 memindahkannya ke validatedUser().
+     *
      * @throws ValidationException
      */
     public function authenticate(): void
     {
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
-            RateLimiter::hit($this->throttleKey());
-
-            throw ValidationException::withMessages([
-                'email' => trans('auth.failed'),
-            ]);
+        if (! Auth::attempt($this->only('email', 'password'))) {
+            $this->failCredentials();
         }
 
         RateLimiter::clear($this->throttleKey());
+    }
+
+    /**
+     * Validasi kredensial TANPA login: login ditentukan oleh TwoFactorGate.
+     *
+     * @throws ValidationException
+     */
+    public function validatedUser(): User
+    {
+        $this->ensureIsNotRateLimited();
+
+        $provider = Auth::guard()->getProvider();
+        $credentials = $this->only('email', 'password');
+        $user = $provider->retrieveByCredentials($credentials);
+
+        if (! $user instanceof User || ! $provider->validateCredentials($user, $credentials)) {
+            $this->failCredentials();
+        }
+
+        RateLimiter::clear($this->throttleKey());
+
+        return $user;
+    }
+
+    /**
+     * @throws ValidationException
+     */
+    private function failCredentials(): never
+    {
+        RateLimiter::hit($this->throttleKey());
+
+        throw ValidationException::withMessages([
+            'email' => trans('auth.failed'),
+        ]);
     }
 
     /**

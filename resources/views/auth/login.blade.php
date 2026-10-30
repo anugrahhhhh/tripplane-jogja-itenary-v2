@@ -40,11 +40,7 @@
             <x-input-error :messages="$errors->get('password')" class="mt-2" />
         </div>
 
-        <div class="flex items-center justify-between">
-            <label class="inline-flex items-center gap-2 text-sm text-ink/60">
-                <input type="checkbox" name="remember" class="rounded border-ink/20 text-primary focus:ring-primary">
-                Ingat saya
-            </label>
+        <div class="flex items-center justify-end">
             @if (Route::has('password.request'))
                 <a class="text-sm font-medium text-accent-500 hover:underline" href="{{ route('password.request') }}">Lupa password?</a>
             @endif
