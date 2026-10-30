@@ -296,6 +296,42 @@
                         @endif
                     </div>
 
+                    @if ($isOwner)
+                        <div class="bg-white border border-primary-100 rounded-2xl p-5" x-data="{ copied: false, failed: false }">
+                            <h3 class="font-semibold text-ink">Bagikan itinerary</h3>
+                            <p class="mt-1 text-xs text-ink/50">Siapa pun yang punya link ini bisa melihat itinerary tanpa login. Catatan pribadi dan kolaborator tidak ditampilkan.</p>
+
+                            @if ($itinerary->share_token)
+                                <div class="mt-3 flex gap-2">
+                                    <input type="text" readonly x-ref="shareUrl" value="{{ route('itineraries.shared', $itinerary->share_token) }}" class="flex-1 min-w-0 rounded-lg border-primary-100 text-xs focus:border-primary focus:ring-primary" onfocus="this.select()">
+                                    <button type="button"
+                                            @click="navigator.clipboard.writeText($refs.shareUrl.value).then(() => { copied = true; failed = false; setTimeout(() => copied = false, 2000); }).catch(() => { failed = true; $refs.shareUrl.select(); })"
+                                            class="shrink-0 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white hover:bg-primary-600 transition">
+                                        <span x-show="! copied">Salin</span>
+                                        <span x-show="copied" x-cloak>Tersalin</span>
+                                    </button>
+                                </div>
+                                <p x-show="failed" x-cloak class="mt-1.5 text-xs text-amber-600">Salin manual: tekan Ctrl+C pada link yang terpilih.</p>
+                                <div class="mt-3 flex flex-wrap gap-2">
+                                    <form action="{{ route('itineraries.share.store', $itinerary) }}" method="POST" onsubmit="return confirm('Link lama tidak akan bisa dibuka lagi. Lanjutkan?')">
+                                        @csrf
+                                        <button type="submit" class="text-xs font-semibold text-ink/60 border border-primary-200 rounded-lg px-3 py-2 hover:bg-primary-50 transition">Buat link baru</button>
+                                    </form>
+                                    <form action="{{ route('itineraries.share.destroy', $itinerary) }}" method="POST">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="text-xs font-semibold text-red-500 border border-red-100 rounded-lg px-3 py-2 hover:bg-red-50 transition">Matikan link</button>
+                                    </form>
+                                </div>
+                            @else
+                                <form action="{{ route('itineraries.share.store', $itinerary) }}" method="POST" class="mt-3">
+                                    @csrf
+                                    <button type="submit" class="rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white hover:bg-primary-600 transition">Buat link berbagi</button>
+                                </form>
+                            @endif
+                        </div>
+                    @endif
+
                     <div class="bg-white border border-primary-100 rounded-2xl p-4">
                         <h3 class="font-semibold text-ink text-sm">Peta Rute &mdash; Day <span x-text="activeDay"></span></h3>
                         <div id="route-map" class="mt-3 h-64 rounded-xl z-0"></div>

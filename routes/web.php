@@ -7,6 +7,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ItineraryCollaboratorController;
 use App\Http\Controllers\ItineraryController;
 use App\Http\Controllers\ItineraryItemController;
+use App\Http\Controllers\ItineraryShareController;
 use App\Http\Controllers\NearbyController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Profile\TwoFactorSecurityController;
@@ -14,6 +15,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RecommendationController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\SessionPingController;
+use App\Http\Controllers\SharedItineraryController;
 use App\Http\Controllers\TodayItineraryController;
 use Illuminate\Support\Facades\Route;
 
@@ -24,6 +26,8 @@ Route::view('/offline', 'offline')->name('offline');
 Route::get('/katalog', [DestinationController::class, 'index'])->name('destinations.index');
 Route::get('/kategori/{category:slug}', [DestinationController::class, 'byCategory'])->name('destinations.by-category');
 Route::get('/destinasi/{destination:slug}', [DestinationController::class, 'show'])->name('destinations.show');
+
+Route::get('/bagikan/{token}', [SharedItineraryController::class, 'show'])->middleware('throttle:60,1')->name('itineraries.shared');
 
 Route::get('/terdekat', [NearbyController::class, 'index'])->name('nearby.index');
 Route::get('/terdekat/cari', [NearbyController::class, 'search'])->name('nearby.search');
@@ -66,6 +70,9 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/itinerary/{itinerary}/kolaborator', [ItineraryCollaboratorController::class, 'store'])->name('itinerary-collaborators.store');
     Route::delete('/itinerary/{itinerary}/kolaborator/{collaborator}', [ItineraryCollaboratorController::class, 'destroy'])->name('itinerary-collaborators.destroy');
+
+    Route::post('/itinerary/{itinerary}/bagikan', [ItineraryShareController::class, 'store'])->name('itineraries.share.store');
+    Route::delete('/itinerary/{itinerary}/bagikan', [ItineraryShareController::class, 'destroy'])->name('itineraries.share.destroy');
 
     Route::post('/itinerary/{itinerary}/item', [ItineraryItemController::class, 'store'])->name('itinerary-items.store');
     Route::put('/itinerary-item/{itineraryItem}', [ItineraryItemController::class, 'update'])->name('itinerary-items.update');
