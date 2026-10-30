@@ -11,32 +11,32 @@ class IdleTimeoutTest extends TestCase
 {
     use RefreshDatabase;
 
-    private const MESSAGE = 'Kamu keluar otomatis karena tidak aktif selama 5 menit.';
+    private const MESSAGE = 'Kamu keluar otomatis karena tidak aktif selama 2 menit.';
 
-    public function test_user_is_still_logged_in_after_299_seconds(): void
+    public function test_user_is_still_logged_in_after_119_seconds(): void
     {
         $this->actingAs(User::factory()->create())->get('/profile')->assertOk();
 
-        $this->travel(299)->seconds();
+        $this->travel(119)->seconds();
 
         $this->get('/profile')->assertOk();
         $this->assertAuthenticated();
     }
 
-    public function test_user_is_still_logged_in_after_exactly_300_seconds(): void
+    public function test_user_is_still_logged_in_after_exactly_120_seconds(): void
     {
         $this->actingAs(User::factory()->create())->get('/profile')->assertOk();
 
-        $this->travel(300)->seconds();
+        $this->travel(120)->seconds();
 
         $this->get('/profile')->assertOk();
     }
 
-    public function test_user_is_logged_out_after_301_seconds_with_message(): void
+    public function test_user_is_logged_out_after_121_seconds_with_message(): void
     {
         $this->actingAs(User::factory()->create())->get('/profile')->assertOk();
 
-        $this->travel(301)->seconds();
+        $this->travel(121)->seconds();
 
         $this->get('/profile')
             ->assertRedirect(route('login'))
@@ -49,7 +49,7 @@ class IdleTimeoutTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
         $this->actingAs($admin)->get('/profile')->assertOk();
 
-        $this->travel(301)->seconds();
+        $this->travel(121)->seconds();
 
         $this->get('/profile')
             ->assertRedirect(route('admin.login'))
@@ -61,7 +61,7 @@ class IdleTimeoutTest extends TestCase
     {
         $this->actingAs(User::factory()->create())->get('/profile')->assertOk();
 
-        $this->travel(301)->seconds();
+        $this->travel(121)->seconds();
 
         $this->getJson('/profile')
             ->assertStatus(401)
@@ -73,10 +73,10 @@ class IdleTimeoutTest extends TestCase
     {
         $this->actingAs(User::factory()->create())->get('/profile')->assertOk();
 
-        $this->travel(200)->seconds();
+        $this->travel(80)->seconds();
         $this->withHeader('X-Background-Request', '1')->get('/profile')->assertOk();
 
-        $this->travel(101)->seconds();
+        $this->travel(41)->seconds();
         $this->get('/profile')->assertRedirect(route('login'));
         $this->assertGuest();
     }
@@ -85,7 +85,7 @@ class IdleTimeoutTest extends TestCase
     {
         $this->actingAs(User::factory()->create())->get('/profile')->assertOk();
 
-        $this->travel(301)->seconds();
+        $this->travel(121)->seconds();
 
         $this->withHeader('X-Background-Request', '1')->getJson('/profile')
             ->assertStatus(401);
@@ -96,10 +96,10 @@ class IdleTimeoutTest extends TestCase
     {
         $this->actingAs(User::factory()->create())->get('/profile')->assertOk();
 
-        $this->travel(200)->seconds();
+        $this->travel(80)->seconds();
         $this->post(route('session.ping'))->assertNoContent();
 
-        $this->travel(250)->seconds();
+        $this->travel(100)->seconds();
         $this->get('/profile')->assertOk();
         $this->assertAuthenticated();
     }
@@ -153,7 +153,7 @@ class IdleTimeoutTest extends TestCase
         $this->actingAs($user)->get('/profile')->assertOk();
         $link = URL::temporarySignedRoute('security.not-me', now()->addHours(24), ['user' => $user->id]);
 
-        $this->travel(301)->seconds();
+        $this->travel(121)->seconds();
 
         $this->get($link)->assertOk()->assertSee('Ya, amankan akun saya');
         $this->assertGuest();

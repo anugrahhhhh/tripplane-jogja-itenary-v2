@@ -16,7 +16,7 @@ class IdleTimeoutMarkupTest extends TestCase
 
         $response->assertOk()
             ->assertSee('x-data="idleTimeout"', false)
-            ->assertSee('data-timeout="300"', false)
+            ->assertSee('data-timeout="120"', false)
             ->assertSee('data-login-url="'.route('login').'"', false)
             ->assertSee('data-ping-url="'.route('session.ping').'"', false)
             ->assertSee('id="idle-logout-form"', false);

@@ -10,7 +10,7 @@ Melindungi akun JogjaTrip dari pengambilalihan, dan memberi tahu pemilik akun sa
 
 1. **2FA wajib untuk semua akun** (wisatawan, admin, termasuk yang masuk lewat Google) memakai aplikasi authenticator (TOTP).
 2. **Notifikasi login baru** (in-app + email) saat login dari perangkat yang belum tepercaya, dengan tombol **"Bukan saya"** untuk mengamankan akun.
-3. **Auto-logout** setelah 5 menit tidak aktif, dengan peringatan 60 detik sebelumnya.
+3. **Auto-logout** setelah 2 menit tidak aktif, dengan peringatan 60 detik sebelumnya.
 
 ### Keputusan yang sudah disepakati
 
@@ -19,7 +19,7 @@ Melindungi akun JogjaTrip dari pengambilalihan, dan memberi tahu pemilik akun sa
 | Metode 2FA | TOTP (Google Authenticator dsb.) + 8 recovery code. Tidak memakai OTP email/push approval. |
 | Cakupan | Wajib untuk semua user, termasuk login Google. |
 | Perangkat tepercaya | Opsi "Percayai perangkat ini selama 30 hari"; bisa dilihat dan dicabut di Profil. |
-| Auto-logout | 5 menit tidak aktif, modal peringatan di menit ke-4. |
+| Auto-logout | 2 menit tidak aktif, modal peringatan di menit ke-1. |
 | Implementasi | `pragmarx/google2fa` (hitungan TOTP) + `bacon/bacon-qr-code` (QR); alur, controller, dan view ditulis sendiri mengikuti pola Breeze. Tidak memakai Fortify. |
 
 ### Di luar cakupan
@@ -147,12 +147,12 @@ Notifikasi **tidak** dikirim untuk login dari perangkat tepercaya.
 ### 5.1 Server: middleware `LogoutIdleSessions`
 
 - Ditambahkan ke grup `web` dan hanya berlaku untuk user yang sudah login.
-- Menyimpan `last_activity_at` di session. Jika `now - last_activity_at > config('auth.idle_timeout')` (default 300 detik), middleware akan:
+- Menyimpan `last_activity_at` di session. Jika `now - last_activity_at > config('auth.idle_timeout')` (default 120 detik), middleware akan:
   - `Auth::logout()`, `invalidate()`, `regenerateToken()`
-  - untuk request biasa, redirect ke halaman login yang sesuai (wisatawan/admin) dengan flash "Kamu keluar otomatis karena tidak aktif selama 5 menit."
+  - untuk request biasa, redirect ke halaman login yang sesuai (wisatawan/admin) dengan flash "Kamu keluar otomatis karena tidak aktif selama 2 menit."
   - untuk request JSON/AJAX, mengembalikan `401` dengan `{"reason":"idle_timeout"}`.
 - Request dengan header `X-Background-Request: 1` **tidak** memperbarui `last_activity_at`.
-- Konfigurasi: `AUTH_IDLE_TIMEOUT=300` → `config/auth.php` key `idle_timeout`.
+- Konfigurasi: `AUTH_IDLE_TIMEOUT=120` → `config/auth.php` key `idle_timeout`.
 
 ### 5.2 Endpoint
 
@@ -207,17 +207,17 @@ PHPUnit feature test di `tests/Feature/Auth/TwoFactor/`, ditulis dengan TDD. TOT
 - **Perangkat tepercaya:** valid, kedaluwarsa, dicabut, token palsu, milik user lain, prune command.
 - **Notifikasi:** `Notification::fake()`; terkirim hanya untuk perangkat baru; isi browser/OS/IP benar.
 - **"Bukan saya":** GET tanpa efek samping; POST menghapus sesi, perangkat, dan 2FA; signature invalid/kedaluwarsa ditolak; redirect ke form reset password dengan token valid.
-- **Idle timeout:** `travel(299)->seconds()` masih login; `travel(301)->seconds()` logout + redirect; JSON mengembalikan 401; header background tidak memperpanjang; ping memperpanjang.
+- **Idle timeout:** `travel(119)->seconds()` masih login; `travel(121)->seconds()` logout + redirect; JSON mengembalikan 401; header background tidak memperpanjang; ping memperpanjang.
 - **Remember-me:** form tidak memiliki checkbox; login tidak membuat cookie remember.
 - **Admin reset 2FA:** berhasil untuk user lain, ditolak untuk diri sendiri.
 
 **Checklist manual (JavaScript auto-logout)**, karena repo belum memiliki test JS:
-1. Diam 4 menit → modal muncul dengan hitung mundur.
+1. Diam 1 menit → modal muncul dengan hitung mundur.
 2. Klik "Tetap masuk" → modal tertutup, sesi diperpanjang.
-3. Diam 5 menit → logout + pesan di halaman login.
+3. Diam 2 menit → logout + pesan di halaman login.
 4. Dua tab: aktif di tab A → tab B tidak logout; logout di A → B ikut pindah.
-5. Scroll terus 6 menit tanpa klik → tetap login.
-6. Tutup laptop 6 menit lalu buka → request berikutnya diarahkan ke login.
+5. Scroll terus 3 menit tanpa klik → tetap login.
+6. Tutup laptop 3 menit lalu buka → request berikutnya diarahkan ke login.
 
 ## 9. Deploy
 
@@ -226,7 +226,7 @@ Tambahan ke `docs/deployment/PAAS-GUIDE.md` dan `IAAS-GUIDE.md`:
 - Isi `MAIL_MAILER` dan kredensial provider (Resend/Mailgun/SMTP); `MAIL_FROM_ADDRESS` memakai domain sendiri.
 - Pastikan queue worker (`php artisan queue:work`) dan scheduler berjalan.
 - HTTPS wajib; set `SESSION_SECURE_COOKIE=true`.
-- `AUTH_IDLE_TIMEOUT=300`.
+- `AUTH_IDLE_TIMEOUT=120`.
 - **Jangan mengganti `APP_KEY`** setelah ada user yang setup 2FA, karena secret yang terenkripsi tidak akan bisa dibaca lagi.
 - Setelah deploy, semua user lama akan diminta setup 2FA saat login berikutnya.
 

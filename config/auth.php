@@ -124,6 +124,6 @@ return [
     |
     */
 
-    'idle_timeout' => (int) env('AUTH_IDLE_TIMEOUT', 300),
+    'idle_timeout' => (int) env('AUTH_IDLE_TIMEOUT', 120),
 
 ];

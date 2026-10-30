@@ -64,7 +64,7 @@ Fitur 2FA (TOTP) wajib untuk semua user. Hal-hal berikut harus dipenuhi saat dep
 - **HTTPS wajib** dan set `SESSION_SECURE_COOKIE=true` (cookie perangkat tepercaya ikut flag Secure ini).
 - **`SESSION_DRIVER=database` jangan diubah.** Alur "Bukan saya" dan Reset 2FA oleh admin mengeluarkan user dengan menghapus baris di tabel `sessions`; dengan driver `file`/`redis` fitur itu tidak berefek.
 - **`APP_LOCALE=id`** supaya tanggal di email memakai nama bulan Indonesia.
-- **`AUTH_IDLE_TIMEOUT=300`** (detik) untuk batas idle sebelum user dikeluarkan.
+- **`AUTH_IDLE_TIMEOUT=120`** (detik) untuk batas idle sebelum user dikeluarkan.
 - **JANGAN mengganti `APP_KEY`** setelah ada user yang setup 2FA. Secret TOTP dienkripsi dengan key ini; kalau berubah, secret tidak bisa dibaca lagi dan user terkunci.
 - **Migrasi:** `php artisan migrate --force` menambah kolom 2FA, tabel `trusted_devices`, dan membersihkan semua `remember_token` — cookie "Ingat saya" lama berhenti berlaku sekali (memang disengaja).
 - **Build frontend:** `npm run build` harus dijalankan (ada JS baru untuk modal idle-timeout).
@@ -75,7 +75,7 @@ Di PaaS ini (`docker/paas/start.sh`), queue worker dan scheduler dijalankan seba
 ```
 SESSION_SECURE_COOKIE=true
 APP_LOCALE=id
-AUTH_IDLE_TIMEOUT=300
+AUTH_IDLE_TIMEOUT=120
 MAIL_MAILER=smtp            # atau resend / mailgun
 MAIL_HOST=isi_host_provider
 MAIL_PORT=587
