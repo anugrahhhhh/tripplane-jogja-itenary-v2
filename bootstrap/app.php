@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureTwoFactorSetUp;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -15,6 +16,11 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'admin' => EnsureUserIsAdmin::class,
+        ]);
+
+        // Daftar urut: middleware sesi lain (mis. idle timeout) disisipkan sebelum EnsureTwoFactorSetUp
+        $middleware->web(append: [
+            EnsureTwoFactorSetUp::class,
         ]);
 
         // Tamu yang belum masuk dan membuka halaman /admin/* diarahkan ke
