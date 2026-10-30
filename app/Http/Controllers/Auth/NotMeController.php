@@ -9,7 +9,9 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class NotMeController extends Controller
@@ -17,22 +19,30 @@ class NotMeController extends Controller
     /**
      * Halaman konfirmasi; GET tidak mengubah data apa pun.
      */
-    public function show(Request $request, User $user): View|Response
+    public function show(Request $request, string $user): View|Response
     {
-        if (! $request->hasValidSignature()) {
+        // Signature dicek sebelum lookup agar id tak dikenal tidak bisa dibedakan (anti-enumerasi)
+        $user = $request->hasValidSignature() ? User::find($user) : null;
+
+        if (! $user) {
             return $this->expired();
         }
 
         return view('auth.not-me.confirm', ['user' => $user]);
     }
 
-    public function confirm(Request $request, User $user, SecureAccountAction $secure): Response|RedirectResponse
+    public function confirm(Request $request, string $user, SecureAccountAction $secure): Response|RedirectResponse
     {
-        if (! $request->hasValidSignature()) {
+        $user = $request->hasValidSignature() ? User::find($user) : null;
+
+        if (! $user) {
             return $this->expired();
         }
 
         $secure->handle($user);
+
+        // Password lama tidak boleh tetap berlaku sebelum pemilik selesai reset
+        $user->forceFill(['password' => Hash::make(Str::random(64))])->save();
 
         if (Auth::check() && Auth::id() === $user->id) {
             Auth::guard('web')->logout();

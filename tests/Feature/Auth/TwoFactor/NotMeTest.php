@@ -6,6 +6,7 @@ use App\Models\TrustedDevice;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\URL;
 use Tests\TestCase;
@@ -95,8 +96,6 @@ class NotMeTest extends TestCase
         $this->assertStringStartsWith(url('/reset-password'), $location);
         $token = basename(parse_url($location, PHP_URL_PATH));
         $this->assertStringContainsString('email='.urlencode($user->email), $location);
-        fwrite(STDERR, "LOC=$location TOKEN=$token
-");
         $this->assertTrue(Password::tokenExists($user->fresh(), $token));
     }
 
@@ -137,5 +136,36 @@ class NotMeTest extends TestCase
 
         $this->post($this->link($user, 'security.not-me.confirm'))
             ->assertSessionHas('google_hint', false);
+    }
+
+    public function test_post_invalidates_old_password(): void
+    {
+        $user = User::factory()->create();
+
+        $this->post($this->link($user, 'security.not-me.confirm'));
+
+        $this->assertFalse(Hash::check('password', $user->fresh()->password));
+    }
+
+    public function test_deleted_user_with_valid_signature_shows_expired_page(): void
+    {
+        $user = User::factory()->create();
+        $get = $this->link($user);
+        $post = $this->link($user, 'security.not-me.confirm');
+        $user->delete();
+
+        $this->get($get)->assertStatus(403)->assertSee('Link kedaluwarsa');
+        $this->post($post)->assertStatus(403)->assertSee('Link kedaluwarsa');
+    }
+
+    public function test_signature_for_another_user_is_rejected(): void
+    {
+        $a = User::factory()->create();
+        $b = User::factory()->create();
+        $query = parse_url($this->link($a), PHP_URL_QUERY);
+
+        $this->get(route('security.not-me', $b).'?'.$query)->assertStatus(403)->assertSee('Link kedaluwarsa');
+        $this->post(route('security.not-me.confirm', $b).'?'.$query)->assertStatus(403);
+        $this->assertTrue($b->fresh()->hasTwoFactorEnabled());
     }
 }
