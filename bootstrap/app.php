@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureTwoFactorSetUp;
 use App\Http\Middleware\EnsureUserIsAdmin;
+use App\Http\Middleware\LogoutIdleSessions;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -18,8 +19,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => EnsureUserIsAdmin::class,
         ]);
 
-        // Daftar urut: middleware sesi lain (mis. idle timeout) disisipkan sebelum EnsureTwoFactorSetUp
+        // Daftar urut: sesi idle dikeluarkan dulu sebelum redirect setup 2FA
         $middleware->web(append: [
+            LogoutIdleSessions::class,
             EnsureTwoFactorSetUp::class,
         ]);
 
