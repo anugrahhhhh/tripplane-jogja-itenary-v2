@@ -4,10 +4,6 @@
         <p class="text-sm text-ink/60 mt-1">{{ $user->email }}</p>
     </x-slot>
 
-    @if (session('status'))
-        <div class="mb-4 rounded-xl bg-primary-50 border border-primary-100 px-4 py-3 text-sm text-primary-700">{{ session('status') }}</div>
-    @endif
-
     <div class="flex flex-wrap items-center gap-3 mb-6 bg-white border border-primary-100 rounded-2xl p-4">
         <span class="text-sm font-medium {{ $user->hasTwoFactorEnabled() ? 'text-primary-700' : 'text-ink/60' }}">
             {{ $user->hasTwoFactorEnabled() ? '2FA aktif' : '2FA belum diatur' }}

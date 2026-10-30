@@ -77,6 +77,31 @@ class ResetTwoFactorTest extends TestCase
         $this->assertTrue($target->fresh()->hasTwoFactorEnabled());
     }
 
+    public function test_success_message_is_shown_exactly_once_after_reset(): void
+    {
+        Notification::fake();
+        $admin = User::factory()->create(['role' => 'admin']);
+        $target = User::factory()->create();
+
+        $response = $this->actingAs($admin)
+            ->from(route('admin.users.show', $target))
+            ->followingRedirects()
+            ->post(route('admin.users.reset-two-factor', $target));
+
+        $this->assertSame(1, substr_count($response->getContent(), '2FA pengguna berhasil di-reset.'));
+    }
+
+    public function test_show_page_displays_2fa_not_set_status(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $target = User::factory()->withoutTwoFactor()->create();
+
+        $this->actingAs($admin)
+            ->get(route('admin.users.show', $target))
+            ->assertOk()
+            ->assertSee('2FA belum diatur');
+    }
+
     public function test_show_page_has_reset_button(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
