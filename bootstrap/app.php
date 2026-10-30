@@ -3,6 +3,7 @@
 use App\Http\Middleware\EnsureTwoFactorSetUp;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\LogoutIdleSessions;
+use App\Http\Middleware\PreventSensitiveCaching;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -23,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             LogoutIdleSessions::class,
             EnsureTwoFactorSetUp::class,
+            PreventSensitiveCaching::class,
         ]);
 
         // Logout paksa (idle) dari beberapa tab sekaligus: tab kedua membawa token

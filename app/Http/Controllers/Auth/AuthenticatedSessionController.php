@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Middleware\LogoutIdleSessions;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Services\Auth\TwoFactorGate;
+use App\Support\ClearSiteCache;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -55,11 +56,11 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerateToken();
 
         if ($request->input('reason') === 'idle') {
-            return redirect()
+            return ClearSiteCache::apply(redirect()
                 ->route($isAdmin ? 'admin.login' : 'login')
-                ->with('status', LogoutIdleSessions::message());
+                ->with('status', LogoutIdleSessions::message()));
         }
 
-        return redirect('/');
+        return ClearSiteCache::apply(redirect('/'));
     }
 }

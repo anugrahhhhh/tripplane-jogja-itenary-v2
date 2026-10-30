@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\ClearSiteCache;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -41,16 +42,16 @@ class LogoutIdleSessions
 
             // Link "Bukan saya" berlaku untuk tamu; jangan dibelokkan ke halaman login
             if ($request->routeIs('security.not-me', 'security.not-me.confirm')) {
-                return $next($request);
+                return ClearSiteCache::apply($next($request));
             }
 
             if ($request->expectsJson()) {
-                return response()->json(['reason' => 'idle_timeout'], 401);
+                return ClearSiteCache::apply(response()->json(['reason' => 'idle_timeout'], 401));
             }
 
-            return redirect()
+            return ClearSiteCache::apply(redirect()
                 ->route($isAdmin ? 'admin.login' : 'login')
-                ->with('status', self::message());
+                ->with('status', self::message()));
         }
 
         if ($lastActivity === null || ! $request->hasHeader('X-Background-Request')) {

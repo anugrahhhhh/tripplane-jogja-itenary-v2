@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Actions\Auth\SecureAccountAction;
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Support\ClearSiteCache;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
@@ -52,7 +53,7 @@ class NotMeController extends Controller
         // Link reset dikirim lewat email; token tidak pernah ditampilkan di browser
         Password::sendResetLink(['email' => $user->email]);
 
-        return response()->view('auth.not-me.done', ['googleHint' => $user->google_id !== null]);
+        return ClearSiteCache::apply(response()->view('auth.not-me.done', ['googleHint' => $user->google_id !== null]));
     }
 
     private function expired(): Response
