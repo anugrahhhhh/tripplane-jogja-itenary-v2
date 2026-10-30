@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Auth;
 use App\Actions\Auth\SecureAccountAction;
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
@@ -31,7 +30,7 @@ class NotMeController extends Controller
         return view('auth.not-me.confirm', ['user' => $user]);
     }
 
-    public function confirm(Request $request, string $user, SecureAccountAction $secure): Response|RedirectResponse
+    public function confirm(Request $request, string $user, SecureAccountAction $secure): Response
     {
         $user = $request->hasValidSignature() ? User::find($user) : null;
 
@@ -50,9 +49,10 @@ class NotMeController extends Controller
             $request->session()->regenerateToken();
         }
 
-        return redirect()
-            ->route('password.reset', ['token' => Password::createToken($user), 'email' => $user->email])
-            ->with('google_hint', $user->google_id !== null);
+        // Link reset dikirim lewat email; token tidak pernah ditampilkan di browser
+        Password::sendResetLink(['email' => $user->email]);
+
+        return response()->view('auth.not-me.done', ['googleHint' => $user->google_id !== null]);
     }
 
     private function expired(): Response

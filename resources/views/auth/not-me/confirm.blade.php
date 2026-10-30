@@ -2,7 +2,7 @@
     <div class="mb-4 text-sm text-ink/60">
         Kamu menerima ini karena ada login baru ke akun JogjaTrip dengan email <strong>{{ $user->email }}</strong>.
         Jika itu bukan kamu, kami akan mengeluarkan semua sesi, mencabut perangkat tepercaya, mereset autentikasi dua langkah,
-        lalu mengarahkanmu untuk membuat kata sandi baru.
+        lalu mengirim link ke email kamu untuk membuat kata sandi baru.
     </div>
 
     <form method="POST" action="{{ request()->fullUrl() }}">

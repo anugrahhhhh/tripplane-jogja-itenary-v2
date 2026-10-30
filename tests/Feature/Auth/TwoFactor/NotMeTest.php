@@ -4,10 +4,11 @@ namespace Tests\Feature\Auth\TwoFactor;
 
 use App\Models\TrustedDevice;
 use App\Models\User;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
 use Tests\TestCase;
 
@@ -86,56 +87,74 @@ class NotMeTest extends TestCase
         $this->assertNotSame($before, $user->remember_token);
     }
 
-    public function test_post_redirects_to_password_reset_with_valid_token(): void
+    public function test_post_shows_done_page_and_emails_reset_link(): void
     {
+        Notification::fake();
+        $user = User::factory()->create(['google_id' => null]);
+
+        $this->post($this->link($user, 'security.not-me.confirm'))
+            ->assertOk()
+            ->assertSee('Akun kamu sudah diamankan')
+            ->assertSee('Kami sudah mengirim link')
+            ->assertDontSee('myaccount.google.com');
+
+        Notification::assertSentTo($user, ResetPassword::class);
+    }
+
+    public function test_post_does_not_redirect_to_password_reset(): void
+    {
+        Notification::fake();
         $user = User::factory()->create();
 
         $response = $this->post($this->link($user, 'security.not-me.confirm'));
 
-        $location = $response->headers->get('Location');
-        $this->assertStringStartsWith(url('/reset-password'), $location);
-        $token = basename(parse_url($location, PHP_URL_PATH));
-        $this->assertStringContainsString('email='.urlencode($user->email), $location);
-        $this->assertTrue(Password::tokenExists($user->fresh(), $token));
+        $response->assertOk();
+        $this->assertNull($response->headers->get('Location'));
     }
 
     public function test_post_logs_out_current_user_if_same(): void
     {
+        Notification::fake();
         $user = User::factory()->create();
 
         $this->actingAs($user)->post($this->link($user, 'security.not-me.confirm'))
-            ->assertRedirectContains('/reset-password/');
+            ->assertOk()
+            ->assertSee('Akun kamu sudah diamankan');
 
         $this->assertGuest();
     }
 
+    public function test_done_page_renders_even_if_another_user_is_logged_in(): void
+    {
+        Notification::fake();
+        $user = User::factory()->create();
+        $other = User::factory()->create();
+
+        $this->actingAs($other)->post($this->link($user, 'security.not-me.confirm'))
+            ->assertOk()
+            ->assertSee('Akun kamu sudah diamankan');
+
+        $this->assertAuthenticatedAs($other);
+    }
+
     public function test_clicking_twice_still_succeeds(): void
     {
+        Notification::fake();
         $user = User::factory()->create();
         $link = $this->link($user, 'security.not-me.confirm');
 
-        $this->post($link)->assertRedirectContains('/reset-password/');
-        $this->post($link)->assertRedirectContains('/reset-password/');
+        $this->post($link)->assertOk()->assertSee('Akun kamu sudah diamankan');
+        $this->post($link)->assertOk()->assertSee('Akun kamu sudah diamankan');
     }
 
-    public function test_reset_page_shows_google_hint_when_flagged(): void
+    public function test_done_page_shows_google_hint_for_google_user(): void
     {
+        Notification::fake();
         $user = User::factory()->create(['google_id' => 'g-123']);
 
         $this->post($this->link($user, 'security.not-me.confirm'))
-            ->assertSessionHas('google_hint', true);
-
-        $this->get($this->post($this->link($user, 'security.not-me.confirm'))->headers->get('Location'))
             ->assertOk()
-            ->assertSee('akun Google');
-    }
-
-    public function test_reset_page_has_no_google_hint_for_regular_user(): void
-    {
-        $user = User::factory()->create(['google_id' => null]);
-
-        $this->post($this->link($user, 'security.not-me.confirm'))
-            ->assertSessionHas('google_hint', false);
+            ->assertSee('myaccount.google.com/security');
     }
 
     public function test_post_invalidates_old_password(): void

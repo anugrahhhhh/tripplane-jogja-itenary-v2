@@ -137,7 +137,7 @@ Notifikasi **tidak** dikirim untuk login dari perangkat tepercaya.
   2. Hapus semua `trusted_devices` milik user.
   3. Reset 2FA: kosongkan keempat kolom `two_factor_*`.
   4. Rotasi `remember_token`.
-  5. Buat token reset dengan `Password::createToken`, lalu redirect ke form reset password bawaan Breeze. Ini berlaku untuk semua user. User yang biasa masuk lewat Google cukup membuat password baru; jika `google_id` terisi, halaman itu juga menampilkan saran untuk mengamankan akun Google mereka.
+  5. Kirim link reset password ke email user (`Password::sendResetLink`) dan tampilkan halaman "Akun sudah diamankan, cek email". Jika `google_id` terisi, halaman itu juga menampilkan saran untuk mengamankan akun Google mereka.
 - Link yang kedaluwarsa atau tidak valid menampilkan halaman "Link kedaluwarsa" dengan tautan ke Lupa Password.
 
 ## 5. Auto-Logout
