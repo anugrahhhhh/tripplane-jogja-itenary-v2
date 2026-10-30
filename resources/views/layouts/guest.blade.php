@@ -26,6 +26,10 @@
             <a href="{{ route('home') }}" class="mt-6 text-sm text-ink/50 hover:text-primary">&larr; Kembali ke Beranda</a>
         </div>
 
+        @if (session('clear_page_cache'))
+            @include('partials.clear-page-cache')
+        @endif
+
         @auth
             @include('partials.idle-timeout')
         @endauth

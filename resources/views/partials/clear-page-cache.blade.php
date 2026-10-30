@@ -1,4 +1,5 @@
 {{-- Pengaman untuk browser tanpa Clear-Site-Data: hapus cache halaman SW. Aset (*-assets) dibiarkan. --}}
+@once
 <script data-clear-page-cache>
     (function () {
         try {
@@ -13,3 +14,4 @@
         } catch (e) {}
     })();
 </script>
+@endonce

@@ -18,6 +18,7 @@ class ServiceWorkerTest extends TestCase
         $this->assertStringContainsString('no-store', $sw);
         $this->assertStringContainsString('redirected', $sw);
         $this->assertStringContainsString("response.type === 'basic'", $sw);
+        $this->assertStringContainsString("includes('text/html')", $sw);
     }
 
     public function test_login_pages_include_page_cache_cleanup(): void

@@ -58,7 +58,7 @@ async function networkFirstForPages(request) {
 
         // Jangan simpan halaman pribadi (no-store), hasil redirect, atau respons non-basic.
         const cacheControl = response.headers.get('Cache-Control') || '';
-        if (response.ok && !response.redirected && response.type === 'basic' && !cacheControl.includes('no-store')) {
+        if (response.ok && !response.redirected && response.type === 'basic' && !cacheControl.includes('no-store') && (response.headers.get('Content-Type') || '').includes('text/html')) {
             const cache = await caches.open(PAGES_CACHE);
             cache.put(request, response.clone());
         }

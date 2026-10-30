@@ -58,6 +58,10 @@
             @include('layouts.footer')
         </div>
 
+        @if (session('clear_page_cache'))
+            @include('partials.clear-page-cache')
+        @endif
+
         @auth
             @include('partials.idle-timeout')
         @endauth

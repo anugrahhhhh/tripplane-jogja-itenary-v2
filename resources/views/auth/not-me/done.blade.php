@@ -12,4 +12,5 @@
             </div>
         @endif
     </div>
+    @include('partials.clear-page-cache')
 </x-guest-layout>

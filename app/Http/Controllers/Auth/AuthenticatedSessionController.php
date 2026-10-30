@@ -58,9 +58,10 @@ class AuthenticatedSessionController extends Controller
         if ($request->input('reason') === 'idle') {
             return ClearSiteCache::apply(redirect()
                 ->route($isAdmin ? 'admin.login' : 'login')
-                ->with('status', LogoutIdleSessions::message()));
+                ->with('status', LogoutIdleSessions::message())
+                ->with('clear_page_cache', true));
         }
 
-        return ClearSiteCache::apply(redirect('/'));
+        return ClearSiteCache::apply(redirect('/')->with('clear_page_cache', true));
     }
 }

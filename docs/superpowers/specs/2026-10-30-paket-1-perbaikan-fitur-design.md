@@ -34,12 +34,14 @@ Biaya transportasi/makan/parkir, prakiraan cuaca di halaman publik, pengisian ot
 
 ### 2.1 Penghapusan cache saat logout
 
-- Setiap respons yang mengakhiri sesi mengirim header `Clear-Site-Data: "cache"`:
+- Setiap respons yang mengakhiri sesi mengirim header `Clear-Site-Data: "cache", "storage"` (`"cache"` hanya membuang cache HTTP; `"storage"` membuang Cache Storage tempat service worker menyimpan halaman):
   - `AuthenticatedSessionController@destroy` (logout manual dan logout dari form idle `reason=idle`);
   - `LogoutIdleSessions` saat sesi kedaluwarsa (respons redirect maupun JSON 401);
-  - `NotMeController@confirm` (POST "Bukan saya").
+  - `NotMeController@confirm` (POST "Bukan saya");
+  - `ProfileController@destroy` (hapus akun).
 - Header dipasang lewat satu helper agar tidak terduplikasi: `App\Support\ClearSiteCache::apply(Symfony\Component\HttpFoundation\Response $response): Response`.
 - Pengaman untuk browser yang tidak mendukung `Clear-Site-Data`: halaman login wisatawan dan admin memuat skrip kecil yang menghapus Cache Storage bernama `jogjatrip-*-pages` (halaman login hanya untuk tamu, jadi tidak ada halaman pribadi yang perlu dipertahankan). Aset (`*-assets`) tidak dihapus.
+- Fallback flash: setiap redirect yang memakai `ClearSiteCache::apply` juga mengisi flash `clear_page_cache`; layout `app` dan `guest` memuat skrip pembersih yang sama bila flash ada, dan halaman "Bukan saya" selesai selalu memuatnya.
 
 ### 2.2 Halaman yang tidak boleh disimpan
 
@@ -154,7 +156,7 @@ Migrasi: `itineraries.share_token` `string(64)` nullable unique. Tidak masuk `$f
 
 PHPUnit feature/unit test, TDD:
 
-- **A1:** logout manual, logout idle (redirect dan JSON), dan POST "Bukan saya" mengirim `Clear-Site-Data: "cache"`; route sensitif mengirim `Cache-Control` berisi `no-store`; halaman publik (katalog) tidak. Halaman login memuat skrip pembersih cache.
+- **A1:** logout manual, logout idle (redirect dan JSON), dan POST "Bukan saya" mengirim `Clear-Site-Data: "cache", "storage"` (termasuk hapus akun); route sensitif mengirim `Cache-Control` berisi `no-store`; halaman publik (katalog) tidak. Halaman login memuat skrip pembersih cache.
 - **A2:** `composer audit` bersih untuk kedua package; suite lulus.
 - **B1:** unit test estimator (hari kosong, gratis, kunjungan ganda, perkalian peserta, min=max); validasi `traveler_count`; tampilan format rupiah dan "Gratis"; PDF memuat estimasi.
 - **B3:** validasi form admin (1–7, distinct, kosong → null); tampilan "Tutup: Senin"; peringatan muncul pada tanggal yang tepat, termasuk itinerary yang melewati pergantian minggu; tanpa `$date` tidak ada peringatan hari tutup.

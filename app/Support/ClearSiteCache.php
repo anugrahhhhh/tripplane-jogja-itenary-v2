@@ -12,7 +12,7 @@ class ClearSiteCache
 {
     public static function apply(Response $response): Response
     {
-        $response->headers->set('Clear-Site-Data', '"cache"');
+        $response->headers->set('Clear-Site-Data', '"cache", "storage"');
 
         return $response;
     }

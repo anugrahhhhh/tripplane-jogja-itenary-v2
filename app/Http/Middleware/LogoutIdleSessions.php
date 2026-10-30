@@ -51,7 +51,8 @@ class LogoutIdleSessions
 
             return ClearSiteCache::apply(redirect()
                 ->route($isAdmin ? 'admin.login' : 'login')
-                ->with('status', self::message()));
+                ->with('status', self::message())
+                ->with('clear_page_cache', true));
         }
 
         if ($lastActivity === null || ! $request->hasHeader('X-Background-Request')) {

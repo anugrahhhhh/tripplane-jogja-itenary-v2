@@ -18,7 +18,7 @@
 - `traveler_count`: integer 1–50, default 1; pesan: "Jumlah peserta harus antara 1 dan 50."
 - `share_token`: `Str::random(40)`, kolom `string(64)` nullable unique, tidak di `$fillable`.
 - Halaman publik berbagi: tanpa login, `throttle:60,1`, header `X-Robots-Tag: noindex, nofollow`, tanpa nama/email pemilik, kolaborator, atau `notes`.
-- Header logout: `Clear-Site-Data: "cache"` (persis, dengan tanda kutip).
+- Header logout: `Clear-Site-Data: "cache", "storage"` (persis, dengan tanda kutip), plus flash `clear_page_cache` sebagai fallback skrip.
 - Header halaman sensitif: `Cache-Control` mengandung `no-store` dan `private`.
 - Cache SW versi baru: `jogjatrip-v2`.
 - Tidak ada data hari tutup yang dikarang di seeder.
