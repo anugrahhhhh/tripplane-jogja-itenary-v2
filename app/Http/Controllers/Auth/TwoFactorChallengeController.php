@@ -66,16 +66,20 @@ class TwoFactorChallengeController extends Controller
             ]);
         }
 
+        // Hitung percobaan SEBELUM verifikasi agar request paralel tidak melewati batas;
+        // kunci dibersihkan lagi saat berhasil, jadi hanya percobaan gagal yang tersisa.
+        RateLimiter::hit($key, self::DECAY_SECONDS);
+
         $usedRecoveryCode = $recoveryCode !== '';
         $valid = $usedRecoveryCode
             ? $this->twoFactor->useRecoveryCode($user, $recoveryCode)
             : $this->twoFactor->verifyUserCode($user, $code);
 
         if (! $valid) {
-            RateLimiter::hit($key, self::DECAY_SECONDS);
-
             throw ValidationException::withMessages([
-                'code' => ['Kode salah.', 'Pastikan jam HP kamu disetel otomatis.'],
+                'code' => $usedRecoveryCode
+                    ? ['Kode salah.']
+                    : ['Kode salah.', 'Pastikan jam HP kamu disetel otomatis.'],
             ]);
         }
 

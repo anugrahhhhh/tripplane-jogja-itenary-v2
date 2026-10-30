@@ -10,6 +10,7 @@ use App\Services\Auth\TrustedDeviceManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\RateLimiter;
 use PragmaRX\Google2FA\Google2FA;
 use Tests\TestCase;
 
@@ -104,6 +105,34 @@ class TwoFactorChallengeTest extends TestCase
         $this->assertGuest();
         $this->assertNotNull(session('two_factor.pending'));
         Notification::assertNothingSent();
+    }
+
+    public function test_clock_hint_is_shown_for_wrong_totp_but_not_for_wrong_recovery_code(): void
+    {
+        $user = User::factory()->withRecoveryCodes(['aaaaa-11111'])->create();
+        $this->passPassword($user);
+        $hint = 'Pastikan jam HP kamu disetel otomatis.';
+
+        $this->post(route('two-factor.challenge.store'), ['code' => '000000']);
+        $this->assertContains($hint, session('errors')->get('code'));
+
+        $this->post(route('two-factor.challenge.store'), ['recovery_code' => 'zzzzz-99999']);
+        $this->assertSame(['Kode salah.'], session('errors')->get('code'));
+    }
+
+    public function test_attempts_are_counted_before_verification_and_cleared_on_success(): void
+    {
+        $user = User::factory()->create();
+        $this->passPassword($user);
+        $key = 'two-factor:'.$user->id.'|127.0.0.1';
+
+        for ($i = 0; $i < 4; $i++) {
+            $this->post(route('two-factor.challenge.store'), ['code' => '000000']);
+        }
+        $this->assertSame(4, RateLimiter::attempts($key));
+
+        $this->post(route('two-factor.challenge.store'), ['code' => $this->otp($user)])->assertRedirect();
+        $this->assertSame(0, RateLimiter::attempts($key));
     }
 
     public function test_replayed_code_is_rejected(): void
