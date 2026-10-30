@@ -35,24 +35,6 @@ class LoginRequest extends FormRequest
     }
 
     /**
-     * Attempt to authenticate the request's credentials.
-     *
-     * Masih dipakai pintu masuk Admin sampai Task 7 memindahkannya ke validatedUser().
-     *
-     * @throws ValidationException
-     */
-    public function authenticate(): void
-    {
-        $this->ensureIsNotRateLimited();
-
-        if (! Auth::attempt($this->only('email', 'password'))) {
-            $this->failCredentials();
-        }
-
-        RateLimiter::clear($this->throttleKey());
-    }
-
-    /**
      * Validasi kredensial TANPA login: login ditentukan oleh TwoFactorGate.
      *
      * @throws ValidationException

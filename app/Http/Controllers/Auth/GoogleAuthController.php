@@ -4,8 +4,9 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\Auth\TwoFactorGate;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 use Throwable;
@@ -26,7 +27,7 @@ class GoogleAuthController extends Controller
      * pernah dibuat/ditautkan lewat jalur ini — konsisten dengan pemisahan
      * pintu masuk admin vs wisatawan yang sudah ada.
      */
-    public function callback(): RedirectResponse
+    public function callback(Request $request, TwoFactorGate $gate): RedirectResponse
     {
         try {
             $googleUser = Socialite::driver('google')->user();
@@ -65,8 +66,6 @@ class GoogleAuthController extends Controller
             $user->forceFill(['email_verified_at' => now()])->save();
         }
 
-        Auth::login($user, true);
-
-        return redirect()->intended(route('home'));
+        return $gate->pass($request, $user, 'google', $request->session()->pull('url.intended', route('home')));
     }
 }
