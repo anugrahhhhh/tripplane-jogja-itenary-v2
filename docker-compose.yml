@@ -57,6 +57,28 @@ services:
     networks:
       - jogjatrip
 
+  queue:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: php_base
+    container_name: jogjatrip_queue
+    restart: unless-stopped
+    entrypoint: []
+    command: ["sh", "-c", "sleep 15 && php artisan queue:work --tries=3 --backoff=30"]
+    env_file:
+      - .env.docker
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+    volumes:
+      - storage_data:/var/www/html/storage/app/public
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - jogjatrip
+
   db:
     image: mysql:8.0
     container_name: jogjatrip_db
