@@ -53,6 +53,11 @@ class LoginRequest extends FormRequest
 
         RateLimiter::clear($this->throttleKey());
 
+        // Login manual tidak lewat Auth::attempt, jadi rehash diulang di sini
+        if (config('hashing.rehash_on_login', true)) {
+            $provider->rehashPasswordIfRequired($user, $credentials);
+        }
+
         return $user;
     }
 
