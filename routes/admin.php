@@ -36,4 +36,5 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
 
     Route::get('/pengguna', [AdminUserController::class, 'index'])->name('users.index');
     Route::get('/pengguna/{user}', [AdminUserController::class, 'show'])->name('users.show');
+    Route::post('/pengguna/{user}/reset-2fa', [AdminUserController::class, 'resetTwoFactor'])->name('users.reset-two-factor');
 });

@@ -4,6 +4,23 @@
         <p class="text-sm text-ink/60 mt-1">{{ $user->email }}</p>
     </x-slot>
 
+    @if (session('status'))
+        <div class="mb-4 rounded-xl bg-primary-50 border border-primary-100 px-4 py-3 text-sm text-primary-700">{{ session('status') }}</div>
+    @endif
+
+    <div class="flex flex-wrap items-center gap-3 mb-6 bg-white border border-primary-100 rounded-2xl p-4">
+        <span class="text-sm font-medium {{ $user->hasTwoFactorEnabled() ? 'text-primary-700' : 'text-ink/60' }}">
+            {{ $user->hasTwoFactorEnabled() ? '2FA aktif' : '2FA belum diatur' }}
+        </span>
+        @if (! auth()->user()->is($user))
+            <form method="POST" action="{{ route('admin.users.reset-two-factor', $user) }}"
+                  onsubmit="return confirm('Reset 2FA pengguna ini? Mereka harus mengaturnya ulang saat login berikutnya.')">
+                @csrf
+                <button type="submit" class="text-sm px-3 py-1.5 rounded-lg border border-red-200 text-red-700 hover:bg-red-50">Reset 2FA</button>
+            </form>
+        @endif
+    </div>
+
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div class="bg-white border border-primary-100 rounded-2xl p-4">
             <p class="text-xs text-ink/50">Favorit</p>
