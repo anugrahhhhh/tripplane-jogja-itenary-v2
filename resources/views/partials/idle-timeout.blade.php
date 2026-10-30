@@ -17,7 +17,7 @@
                 Sesi akan berakhir dalam <span x-text="remaining"></span> detik
             </p>
             <p class="mt-2 text-sm text-ink/70">Kamu akan keluar otomatis karena tidak ada aktivitas.</p>
-            <button type="button" @click="stay()"
+            <button type="button" x-ref="stayButton" @click="stay()"
                     class="mt-5 inline-flex items-center justify-center rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-600 transition">
                 Tetap masuk
             </button>

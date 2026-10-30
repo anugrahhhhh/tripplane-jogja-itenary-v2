@@ -9,7 +9,9 @@ export default function idleTimeout() {
         remaining: 0,
         lastActivity: Date.now(),
         lastPing: Date.now(),
+        lastSent: 0,
         dirty: false,
+        loggingOut: false,
         channel: null,
 
         init() {
@@ -30,27 +32,37 @@ export default function idleTimeout() {
         onActivity() {
             if (this.open) return; // saat modal tampil, hanya tombol yang memperpanjang
             this.touch(Date.now());
+            this.broadcastActivity();
+        },
+
+        // Siaran dibatasi agar mousemove/scroll tidak membangunkan semua tab terus-menerus.
+        broadcastActivity(force = false) {
+            if (!force && Date.now() - this.lastSent < 2000) return;
+            this.lastSent = Date.now();
             this.send({ type: 'activity', at: this.lastActivity });
         },
 
         touch(at) {
-            this.lastActivity = at;
+            this.lastActivity = Math.max(this.lastActivity, at);
             this.dirty = true;
             this.open = false;
         },
 
         tick() {
+            if (this.loggingOut) return;
             const idle = (Date.now() - this.lastActivity) / 1000;
             if (idle >= this.timeout) return this.logout();
-            this.open = idle >= this.timeout - this.warn;
+            const show = idle >= this.timeout - this.warn;
+            if (show && !this.open) this.$nextTick(() => this.$refs.stayButton?.focus());
+            this.open = show;
             this.remaining = Math.max(0, Math.ceil(this.timeout - idle));
             if (this.dirty && (Date.now() - this.lastPing) / 1000 >= PING_EVERY) this.ping();
         },
 
         stay() {
-            this.onActivity();
             this.open = false;
-            this.send({ type: 'activity', at: this.lastActivity });
+            this.touch(Date.now());
+            this.broadcastActivity(true);
             this.ping();
         },
 
@@ -73,12 +85,16 @@ export default function idleTimeout() {
         },
 
         logout() {
+            if (this.loggingOut) return;
+            this.loggingOut = true;
             this.send({ type: 'logout' });
             this.$refs.logoutForm.submit();
         },
 
         // Tab penerima menunggu sebentar agar request logout selesai lebih dulu.
         onLogout() {
+            if (this.loggingOut) return;
+            this.loggingOut = true;
             setTimeout(() => (window.location = this.loginUrl), 1000);
         },
 
