@@ -1,4 +1,10 @@
 <x-guest-layout>
+    @if (session('google_hint'))
+        <div class="mb-4 rounded-md bg-amber-50 p-3 text-sm text-amber-800">
+            Kamu biasa masuk dengan Google? Amankan juga akun Google-mu di myaccount.google.com/security.
+        </div>
+    @endif
+
     <form method="POST" action="{{ route('password.store') }}">
         @csrf
 
