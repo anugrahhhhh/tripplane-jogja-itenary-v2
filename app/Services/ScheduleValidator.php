@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\ItineraryItem;
+use App\Support\Weekday;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
@@ -13,9 +15,10 @@ class ScheduleValidator
      * luar jam operasionalnya, dan jadwal antar destinasi yang bertabrakan.
      *
      * @param  Collection<int, ItineraryItem>  $dayItems  item pada satu hari yang sama
+     * @param  CarbonInterface|null  $date  tanggal kunjungan; bila diisi, hari tutup mingguan ikut dicek
      * @return array<int, array<int, string>> daftar pesan peringatan, dikelompokkan per itinerary_item_id
      */
-    public static function validateDay(Collection $dayItems): array
+    public static function validateDay(Collection $dayItems, ?CarbonInterface $date = null): array
     {
         $warnings = [];
 
@@ -28,6 +31,11 @@ class ScheduleValidator
                     Carbon::parse($item->destination->open_time)->format('H:i'),
                     Carbon::parse($item->destination->close_time)->format('H:i')
                 );
+            }
+
+            $closedDays = $item->destination->closed_days;
+            if ($date !== null && ! empty($closedDays) && in_array($date->isoWeekday(), $closedDays, true)) {
+                $warnings[$item->id][] = 'Tutup setiap hari '.Weekday::name($date->isoWeekday()).'.';
             }
         }
 

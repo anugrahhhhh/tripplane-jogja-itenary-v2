@@ -68,6 +68,9 @@
                             Jam Operasional
                         </p>
                         <p class="mt-1 font-semibold text-ink text-sm">{{ \Illuminate\Support\Carbon::parse($destination->open_time)->format('H:i') }} &mdash; {{ \Illuminate\Support\Carbon::parse($destination->close_time)->format('H:i') }} WIB</p>
+                        @if (! empty($destination->closed_days))
+                            <p class="mt-1 text-xs text-ink/60">Tutup: {{ \App\Support\Weekday::names($destination->closed_days) }}</p>
+                        @endif
                     </div>
                     <div class="rounded-xl border border-primary-100 bg-cream/60 p-4">
                         <p class="flex items-center gap-1.5 text-xs text-ink/50">

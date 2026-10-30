@@ -133,6 +133,8 @@ class DestinationController extends Controller
             'price_max' => ['required', 'integer', 'gte:price_min'],
             'open_time' => ['required', 'date_format:H:i'],
             'close_time' => ['required', 'date_format:H:i'],
+            'closed_days' => ['nullable', 'array'],
+            'closed_days.*' => ['integer', 'between:1,7', 'distinct'],
             'cover_photo' => ['nullable', 'image', 'max:2048'],
             'photos.*' => ['nullable', 'image', 'max:2048'],
         ]);
@@ -150,6 +152,7 @@ class DestinationController extends Controller
             'price_max' => $request->integer('price_max'),
             'open_time' => $request->input('open_time'),
             'close_time' => $request->input('close_time'),
+            'closed_days' => collect($request->input('closed_days', []))->map(fn ($d) => (int) $d)->unique()->sort()->values()->all() ?: null,
             'is_active' => $request->boolean('is_active'),
         ];
     }

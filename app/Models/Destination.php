@@ -25,6 +25,7 @@ class Destination extends Model
         'price_max',
         'open_time',
         'close_time',
+        'closed_days',
         'cover_photo',
         'is_active',
     ];
@@ -36,6 +37,7 @@ class Destination extends Model
             'longitude' => 'float',
             'price_min' => 'integer',
             'price_max' => 'integer',
+            'closed_days' => 'array',
             'is_active' => 'boolean',
         ];
     }

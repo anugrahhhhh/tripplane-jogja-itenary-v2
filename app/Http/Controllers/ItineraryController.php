@@ -4,13 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Destination;
 use App\Models\Itinerary;
-use App\Services\DistanceService;
-use App\Services\ScheduleValidator;
+use App\Services\ItineraryInsights;
 use App\Services\WeatherService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -79,7 +77,7 @@ class ItineraryController extends Controller
         $favoriteDestinations = auth()->user()->favorites()->with('destination')->get()->pluck('destination');
         $catalogDestinations = Destination::where('is_active', true)->orderBy('name')->get();
 
-        [$mapPointsByDay, $warningsByDay, $travelInfoByDay] = $this->buildDayInsights($itinerary);
+        [$mapPointsByDay, $warningsByDay, $travelInfoByDay] = ItineraryInsights::build($itinerary);
         $weatherByDay = $this->buildWeatherByDay($itinerary, $weather);
 
         return view('itineraries.show', [
@@ -134,7 +132,7 @@ class ItineraryController extends Controller
 
         $itinerary->load('items.destination');
 
-        [, $warningsByDay, $travelInfoByDay] = $this->buildDayInsights($itinerary);
+        [, $warningsByDay, $travelInfoByDay] = ItineraryInsights::build($itinerary);
 
         $pdf = Pdf::loadView('itineraries.pdf', [
             'itinerary' => $itinerary,
@@ -164,33 +162,6 @@ class ItineraryController extends Controller
     }
 
     /**
-     * Siapkan data titik peta, peringatan jadwal (bentrok/di luar jam
-     * operasional), dan estimasi jarak+waktu tempuh antar destinasi
-     * berurutan, dikelompokkan per hari.
-     *
-     * @return array{0: array, 1: array, 2: array}
-     */
-    protected function buildDayInsights(Itinerary $itinerary): array
-    {
-        $mapPointsByDay = [];
-        $warningsByDay = [];
-        $travelInfoByDay = [];
-
-        foreach ($itinerary->itemsByDay() as $day => $items) {
-            $mapPointsByDay[$day] = $items->map(fn ($item) => [
-                'lat' => $item->destination->latitude,
-                'lng' => $item->destination->longitude,
-                'name' => $item->destination->name,
-            ])->values();
-
-            $warningsByDay[$day] = ScheduleValidator::validateDay($items);
-            $travelInfoByDay[$day] = $this->travelInfoBetween($items);
-        }
-
-        return [$mapPointsByDay, $warningsByDay, $travelInfoByDay];
-    }
-
-    /**
      * Prakiraan cuaca per day_number, diambil sekali untuk seluruh rentang
      * tanggal itinerary (bukan per hari) supaya hanya satu panggilan API.
      */
@@ -211,34 +182,5 @@ class ItineraryController extends Controller
         }
 
         return $weatherByDay;
-    }
-
-    /**
-     * Jarak & estimasi waktu tempuh dari destinasi sebelumnya ke destinasi
-     * ini, dikunci berdasarkan itinerary_item id "tujuan".
-     */
-    protected function travelInfoBetween(Collection $items): array
-    {
-        $info = [];
-        $itemsList = $items->values();
-
-        for ($i = 0; $i < $itemsList->count() - 1; $i++) {
-            $current = $itemsList[$i];
-            $next = $itemsList[$i + 1];
-
-            $distance = DistanceService::haversineKm(
-                $current->destination->latitude,
-                $current->destination->longitude,
-                $next->destination->latitude,
-                $next->destination->longitude
-            );
-
-            $info[$next->id] = [
-                'distance_km' => round($distance, 1),
-                'duration_minutes' => DistanceService::estimateDurationMinutes($distance),
-            ];
-        }
-
-        return $info;
     }
 }

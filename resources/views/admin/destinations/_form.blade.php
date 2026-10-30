@@ -84,6 +84,21 @@
 </div>
 
 <div>
+    <x-input-label value="Hari Tutup (mingguan)" />
+    <div class="mt-2 flex flex-wrap gap-x-4 gap-y-2">
+        @foreach (\App\Support\Weekday::all() as $iso => $dayName)
+            <label class="inline-flex items-center gap-2">
+                <input type="checkbox" name="closed_days[]" value="{{ $iso }}" class="rounded border-ink/20 text-primary focus:ring-primary" @checked(in_array($iso, array_map('intval', (array) old('closed_days', $destination?->closed_days ?? [])), true))>
+                <span class="text-sm text-ink/80">{{ $dayName }}</span>
+            </label>
+        @endforeach
+    </div>
+    <p class="mt-1 text-xs text-ink/50">Kosongkan bila destinasi buka setiap hari.</p>
+    <x-input-error :messages="$errors->get('closed_days')" class="mt-1" />
+    <x-input-error :messages="$errors->get('closed_days.*')" class="mt-1" />
+</div>
+
+<div>
     <label class="inline-flex items-center gap-2">
         <input type="checkbox" name="is_active" value="1" class="rounded border-ink/20 text-primary focus:ring-primary" @checked(old('is_active', $destination?->is_active ?? true))>
         <span class="text-sm text-ink/80">Tampilkan destinasi ini di katalog (aktif)</span>
