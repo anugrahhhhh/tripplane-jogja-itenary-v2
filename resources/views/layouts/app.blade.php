@@ -53,5 +53,9 @@
 
             @include('layouts.footer')
         </div>
+
+        @auth
+            @include('partials.idle-timeout')
+        @endauth
     </body>
 </html>
