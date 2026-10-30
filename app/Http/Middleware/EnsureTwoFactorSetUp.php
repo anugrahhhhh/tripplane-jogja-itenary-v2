@@ -19,6 +19,7 @@ class EnsureTwoFactorSetUp
         'logout',
         'session.ping',
         'security.not-me*',
+        'itineraries.shared',
     ];
 
     public function handle(Request $request, Closure $next): Response

@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8" x-data="itineraryBuilder()">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8" x-data="itineraryMap()">
         <nav class="text-sm text-ink/50 mb-2">
             <a href="{{ route('itineraries.index') }}" class="hover:text-primary">Itinerary</a>
             <span class="mx-1">/</span>
@@ -33,16 +33,7 @@
         </div>
 
         <!-- Day tabs -->
-        <div class="mt-6 flex gap-2 overflow-x-auto pb-1">
-            @foreach ($itinerary->itemsByDay() as $day => $items)
-                <button type="button" @click="activeDay = {{ $day }}; renderDay();"
-                        :class="activeDay === {{ $day }} ? 'bg-primary text-white' : 'bg-white border border-primary-100 text-ink/70 hover:bg-primary-50'"
-                        class="shrink-0 rounded-xl px-4 py-2.5 text-left transition">
-                    <span class="block text-xs font-bold tracking-wide uppercase">Day {{ $day }}</span>
-                    <span class="block text-xs opacity-80">{{ $itinerary->start_date->copy()->addDays($day - 1)->translatedFormat('d M') }}</span>
-                </button>
-            @endforeach
-        </div>
+        @include('itineraries.partials.day-tabs', ['itinerary' => $itinerary])
 
         <div class="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div class="lg:col-span-2">
@@ -305,7 +296,7 @@
                                 <div class="mt-3 flex gap-2">
                                     <input type="text" readonly x-ref="shareUrl" value="{{ route('itineraries.shared', $itinerary->share_token) }}" class="flex-1 min-w-0 rounded-lg border-primary-100 text-xs focus:border-primary focus:ring-primary" onfocus="this.select()">
                                     <button type="button"
-                                            @click="navigator.clipboard.writeText($refs.shareUrl.value).then(() => { copied = true; failed = false; setTimeout(() => copied = false, 2000); }).catch(() => { failed = true; $refs.shareUrl.select(); })"
+                                            @click="if (! navigator.clipboard) { failed = true; $refs.shareUrl.select(); return; } try { navigator.clipboard.writeText($refs.shareUrl.value).then(() => { copied = true; failed = false; setTimeout(() => copied = false, 2000); }).catch(() => { failed = true; $refs.shareUrl.select(); }); } catch (e) { failed = true; $refs.shareUrl.select(); }"
                                             class="shrink-0 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white hover:bg-primary-600 transition">
                                         <span x-show="! copied">Salin</span>
                                         <span x-show="copied" x-cloak>Tersalin</span>
@@ -342,42 +333,8 @@
     </div>
 
     <x-slot name="head">
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+        @include('itineraries.partials.route-map', ['mapPointsByDay' => $mapPointsByDay])
         <script>
-            window.itineraryDays = @json($mapPointsByDay);
-
-            function itineraryBuilder() {
-                return {
-                    activeDay: 1,
-                    map: null,
-                    layer: null,
-                    init() {
-                        this.map = L.map('route-map').setView([-7.8014, 110.3644], 12);
-                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                            attribution: '&copy; OpenStreetMap contributors',
-                        }).addTo(this.map);
-                        this.layer = L.layerGroup().addTo(this.map);
-                        this.renderDay();
-                    },
-                    renderDay() {
-                        this.layer.clearLayers();
-                        const points = window.itineraryDays[this.activeDay] || [];
-                        if (points.length === 0) {
-                            return;
-                        }
-                        const latlngs = points.map((p, idx) => {
-                            L.marker([p.lat, p.lng]).bindPopup((idx + 1) + '. ' + p.name).addTo(this.layer);
-                            return [p.lat, p.lng];
-                        });
-                        if (latlngs.length > 1) {
-                            L.polyline(latlngs, { color: '#2F6B5A', weight: 3 }).addTo(this.layer);
-                        }
-                        this.map.fitBounds(latlngs, { padding: [30, 30] });
-                    },
-                };
-            }
-
             function moveItem(button, direction) {
                 const li = button.closest('li');
                 const list = li.parentElement;

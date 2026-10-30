@@ -93,7 +93,8 @@ class ShareLinkTest extends TestCase
         $this->actingAs($collaborator)
             ->get(route('itineraries.show', $itinerary))
             ->assertOk()
-            ->assertDontSee('Bagikan itinerary');
+            ->assertDontSee('Bagikan itinerary')
+            ->assertDontSee($itinerary->share_token);
 
         $this->actingAs($itinerary->user)
             ->get(route('itineraries.show', $itinerary))
@@ -161,5 +162,14 @@ class ShareLinkTest extends TestCase
         ]);
 
         $this->assertNull($itinerary->fresh()->share_token);
+    }
+
+    public function test_user_without_two_factor_can_open_share_link(): void
+    {
+        $itinerary = $this->sharedItinerary();
+
+        $this->actingAs(User::factory()->withoutTwoFactor()->create())
+            ->get(route('itineraries.shared', $itinerary->share_token))
+            ->assertOk();
     }
 }
