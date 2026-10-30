@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Destination;
 use App\Models\Itinerary;
+use App\Services\ItineraryCostEstimator;
 use App\Services\ItineraryInsights;
 use App\Services\WeatherService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -89,6 +90,7 @@ class ItineraryController extends Controller
             'warningsByDay' => $warningsByDay,
             'travelInfoByDay' => $travelInfoByDay,
             'weatherByDay' => $weatherByDay,
+            'cost' => (new ItineraryCostEstimator)->estimate($itinerary),
         ]);
     }
 
@@ -138,6 +140,7 @@ class ItineraryController extends Controller
             'itinerary' => $itinerary,
             'warningsByDay' => $warningsByDay,
             'travelInfoByDay' => $travelInfoByDay,
+            'cost' => (new ItineraryCostEstimator)->estimate($itinerary),
         ]);
 
         return $pdf->download('itinerary-'.$itinerary->id.'.pdf');

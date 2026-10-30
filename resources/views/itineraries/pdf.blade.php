@@ -23,6 +23,8 @@
         &middot; JogjaTrip
     </p>
 
+    @include('itineraries.partials.cost-summary', ['cost' => $cost, 'pdf' => true])
+
     @foreach ($itinerary->itemsByDay() as $day => $items)
         <h2>Hari ke-{{ $day }} &mdash; {{ $itinerary->start_date->copy()->addDays($day - 1)->translatedFormat('d F Y') }}</h2>
 

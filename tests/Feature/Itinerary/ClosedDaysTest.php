@@ -5,6 +5,7 @@ namespace Tests\Feature\Itinerary;
 use App\Models\Destination;
 use App\Models\Itinerary;
 use App\Models\User;
+use App\Services\ItineraryCostEstimator;
 use App\Services\ItineraryInsights;
 use App\Services\ScheduleValidator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -95,6 +96,7 @@ class ClosedDaysTest extends TestCase
             'itinerary' => $itinerary,
             'warningsByDay' => $warningsByDay,
             'travelInfoByDay' => $travelInfoByDay,
+            'cost' => (new ItineraryCostEstimator)->estimate($itinerary),
         ])->render();
 
         $this->assertStringContainsString('Tutup setiap hari Senin.', $html);

@@ -28,6 +28,10 @@
             </div>
         </div>
 
+        <div class="mt-6">
+            @include('itineraries.partials.cost-summary', ['cost' => $cost])
+        </div>
+
         <!-- Day tabs -->
         <div class="mt-6 flex gap-2 overflow-x-auto pb-1">
             @foreach ($itinerary->itemsByDay() as $day => $items)
