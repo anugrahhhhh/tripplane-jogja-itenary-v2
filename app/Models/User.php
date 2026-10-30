@@ -37,6 +37,10 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
+        'two_factor_confirmed_at',
+        'two_factor_last_used_step',
     ];
 
     /**
@@ -49,12 +53,26 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'two_factor_secret' => 'encrypted',
+            'two_factor_recovery_codes' => 'encrypted:array',
+            'two_factor_confirmed_at' => 'datetime',
+            'two_factor_last_used_step' => 'integer',
         ];
     }
 
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
+    }
+
+    public function hasTwoFactorEnabled(): bool
+    {
+        return $this->two_factor_confirmed_at !== null;
+    }
+
+    public function recoveryCodesRemaining(): int
+    {
+        return count($this->two_factor_recovery_codes ?? []);
     }
 
     /**
