@@ -7,9 +7,14 @@ use App\Services\Auth\TrustedDeviceManager;
 use App\Services\Auth\TwoFactorAuthenticator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 
 class TwoFactorSecurityController extends Controller
 {
+    private const MAX_ATTEMPTS = 5;
+
+    private const DECAY_SECONDS = 60;
+
     public function __construct(
         private readonly TwoFactorAuthenticator $twoFactor,
         private readonly TrustedDeviceManager $trustedDevices,
@@ -23,9 +28,26 @@ class TwoFactorSecurityController extends Controller
 
         $user = $request->user();
 
+        if (! $user->hasTwoFactorEnabled()) {
+            return redirect()->route('two-factor.setup');
+        }
+
+        $key = 'two-factor-regenerate:'.$user->id.'|'.$request->ip();
+
+        if (RateLimiter::tooManyAttempts($key, self::MAX_ATTEMPTS)) {
+            return back()->withErrors([
+                'code' => 'Terlalu banyak percobaan. Coba lagi dalam '.RateLimiter::availableIn($key).' detik.',
+            ], 'twoFactor');
+        }
+
+        // Percobaan dihitung sebelum verifikasi; dibersihkan lagi bila berhasil.
+        RateLimiter::hit($key, self::DECAY_SECONDS);
+
         if (! $this->twoFactor->verifyUserCode($user, $validated['code'])) {
             return back()->withErrors(['code' => 'Kode salah.'], 'twoFactor');
         }
+
+        RateLimiter::clear($key);
 
         $codes = $this->twoFactor->generateRecoveryCodes();
         $user->forceFill(['two_factor_recovery_codes' => $codes['hashed']])->save();

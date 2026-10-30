@@ -135,4 +135,57 @@ class TwoFactorSecurityTest extends TestCase
             ->assertOk()
             ->assertDontSee('Recovery code hampir habis');
     }
+
+    public function test_regenerate_is_rate_limited(): void
+    {
+        $user = $this->userWithCodes(3);
+        $before = $user->two_factor_recovery_codes;
+
+        for ($i = 0; $i < 5; $i++) {
+            $this->actingAs($user)->from(route('profile.edit'))
+                ->post(route('profile.recovery-codes.regenerate'), ['code' => '000000'])
+                ->assertSessionHasErrors('code', null, 'twoFactor');
+        }
+
+        $valid = (new Google2FA)->getCurrentOtp($user->two_factor_secret);
+        $response = $this->actingAs($user)->from(route('profile.edit'))
+            ->post(route('profile.recovery-codes.regenerate'), ['code' => $valid]);
+
+        $response->assertRedirect(route('profile.edit'));
+        $this->assertStringContainsString(
+            'Terlalu banyak percobaan. Coba lagi dalam',
+            session('errors')->getBag('twoFactor')->first('code')
+        );
+        $this->assertSame($before, $user->fresh()->two_factor_recovery_codes);
+    }
+
+    public function test_regenerate_rejected_without_confirmed_two_factor(): void
+    {
+        $user = User::factory()->withoutTwoFactor()->create();
+
+        $this->actingAs($user)
+            ->post(route('profile.recovery-codes.regenerate'), ['code' => '123456'])
+            ->assertRedirect(route('two-factor.setup'));
+
+        $this->assertNull($user->fresh()->two_factor_recovery_codes);
+    }
+
+    public function test_regenerate_rejects_replayed_code(): void
+    {
+        $user = $this->userWithCodes(3);
+        $code = (new Google2FA)->getCurrentOtp($user->two_factor_secret);
+
+        $this->actingAs($user)->post(route('profile.recovery-codes.regenerate'), ['code' => $code]);
+        $plain = session('two_factor.recovery_codes_plain');
+        $hashes = $user->fresh()->two_factor_recovery_codes;
+
+        $this->actingAs($user)->from(route('profile.edit'))
+            ->post(route('profile.recovery-codes.regenerate'), ['code' => $code])
+            ->assertRedirect(route('profile.edit'));
+
+        $this->assertSame('Kode salah.', session('errors')->getBag('twoFactor')->first('code'));
+        $fresh = $user->fresh();
+        $this->assertSame($hashes, $fresh->two_factor_recovery_codes);
+        $this->assertTrue(app(TwoFactorAuthenticator::class)->useRecoveryCode($fresh, $plain[0]));
+    }
 }
