@@ -26,6 +26,12 @@
                 </div>
             </div>
 
+            <div>
+                <x-input-label for="traveler_count" value="Jumlah peserta" />
+                <x-text-input id="traveler_count" name="traveler_count" type="number" min="1" max="50" class="mt-1 block w-full" value="{{ old('traveler_count', 1) }}" required />
+                <x-input-error :messages="$errors->get('traveler_count')" class="mt-1" />
+            </div>
+
             <div class="flex justify-end gap-2 pt-2">
                 <a href="{{ route('itineraries.index') }}" class="inline-flex items-center rounded-lg border border-primary-200 px-4 py-2.5 text-sm font-semibold text-primary-700 hover:bg-primary-50 transition">Batal</a>
                 <x-primary-button>Buat Itinerary</x-primary-button>

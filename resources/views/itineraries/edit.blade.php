@@ -27,6 +27,12 @@
                 </div>
             </div>
 
+            <div>
+                <x-input-label for="traveler_count" value="Jumlah peserta" />
+                <x-text-input id="traveler_count" name="traveler_count" type="number" min="1" max="50" class="mt-1 block w-full" value="{{ old('traveler_count', $itinerary->traveler_count ?? 1) }}" required />
+                <x-input-error :messages="$errors->get('traveler_count')" class="mt-1" />
+            </div>
+
             <p class="text-xs text-ink/50">Catatan: jika rentang hari dipersempit, destinasi yang berada di hari yang terhapus perlu dipindah manual dari halaman itinerary.</p>
 
             <div class="flex justify-end gap-2 pt-2">

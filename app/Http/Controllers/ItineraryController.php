@@ -16,6 +16,13 @@ use Symfony\Component\HttpFoundation\Response;
 
 class ItineraryController extends Controller
 {
+    private const TRAVELER_COUNT_MESSAGES = [
+        'traveler_count.required' => 'Jumlah peserta harus antara 1 dan 50.',
+        'traveler_count.integer' => 'Jumlah peserta harus antara 1 dan 50.',
+        'traveler_count.min' => 'Jumlah peserta harus antara 1 dan 50.',
+        'traveler_count.max' => 'Jumlah peserta harus antara 1 dan 50.',
+    ];
+
     /**
      * Titik koordinat kota Yogyakarta dipakai sebagai representasi cuaca
      * untuk seluruh itinerary — cukup akurat karena Kota Yogyakarta hanya
@@ -51,7 +58,8 @@ class ItineraryController extends Controller
             'title' => ['required', 'string', 'max:255'],
             'start_date' => ['required', 'date'],
             'end_date' => ['required', 'date', 'after_or_equal:start_date'],
-        ]);
+            'traveler_count' => ['required', 'integer', 'min:1', 'max:50'],
+        ], self::TRAVELER_COUNT_MESSAGES);
 
         $itinerary = auth()->user()->itineraries()->create([
             ...$data,
@@ -101,7 +109,8 @@ class ItineraryController extends Controller
             'title' => ['required', 'string', 'max:255'],
             'start_date' => ['required', 'date'],
             'end_date' => ['required', 'date', 'after_or_equal:start_date'],
-        ]);
+            'traveler_count' => ['required', 'integer', 'min:1', 'max:50'],
+        ], self::TRAVELER_COUNT_MESSAGES);
 
         $itinerary->update($data);
 
