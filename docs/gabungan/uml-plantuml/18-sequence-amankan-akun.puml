@@ -1,0 +1,56 @@
+@startuml 18-sequence-amankan-akun
+title Sequence Diagram - Amankan Akun ("Bukan saya") & Reset 2FA oleh Admin
+
+skinparam sequence {
+  ArrowColor #2F6B5A
+  LifeLineBorderColor #2F6B5A
+  ParticipantBorderColor #2F6B5A
+  ParticipantBackgroundColor #FAF8F3
+  ActorBackgroundColor #E8D5DA
+}
+
+actor "Pemilik Akun" as Owner
+actor Admin
+participant "NotMeController" as NotMe
+participant "Admin\\UserController" as AdminUser
+participant "SecureAccountAction" as Secure
+participant "TrustedDeviceManager" as Trusted
+participant "TwoFactorAuthenticator" as TFA
+participant "Password Broker" as Broker
+database "MySQL\n(sessions, trusted_devices,\nusers, jobs)" as DB
+
+== Pemilik menekan "Bukan saya" dari notifikasi login baru ==
+Owner -> NotMe : GET /keamanan/bukan-saya/{user}?signature=...
+NotMe -> NotMe : hasValidSignature()
+alt tanda tangan link tidak valid / kedaluwarsa
+  NotMe --> Owner : 403 halaman "link kedaluwarsa"
+else valid
+  NotMe --> Owner : halaman konfirmasi
+  Owner -> NotMe : POST konfirmasi
+  NotMe -> Secure : handle(user)
+  Secure -> DB : DELETE sessions WHERE user_id = ?
+  Secure -> Trusted : revokeAll(user)
+  Trusted -> DB : DELETE trusted_devices
+  Secure -> TFA : disable(user)
+  TFA -> DB : UPDATE users (kosongkan kolom 2FA)
+  Secure -> DB : UPDATE users (remember_token baru)
+  NotMe -> DB : UPDATE users (password acak)
+  NotMe -> Broker : sendResetLink(email)
+  Broker -> DB : simpan token reset + antre email
+  NotMe --> Owner : halaman "akun diamankan,\ncek email untuk atur password baru"\n+ hapus cache halaman (Clear-Site-Data)
+end
+
+== Admin mereset 2FA pengguna ==
+Admin -> AdminUser : POST /admin/pengguna/{user}/reset-2fa
+alt admin mereset dirinya sendiri
+  AdminUser --> Admin : 403
+else pengguna lain
+  AdminUser -> Secure : handle(user)
+  note right : langkah sama seperti di atas:\nputus semua sesi, cabut perangkat\ntepercaya, nonaktifkan 2FA
+  AdminUser -> DB : antre TwoFactorResetByAdminNotification
+  AdminUser --> Admin : kembali + "2FA pengguna berhasil di-reset"
+end
+
+note over Owner : Saat masuk berikutnya, pengguna\nwajib mengaktifkan 2FA lagi (Activity Diagram 02g-02h).
+
+@enduml

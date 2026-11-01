@@ -26,20 +26,23 @@ endif
 while (untuk setiap itinerary?) is (masih ada)
   :Kumpulkan penerima\n(pemilik + seluruh kolaborator, unik);
   while (untuk setiap penerima?) is (masih ada)
-    |ItineraryReminderNotification|
-    partition "Kanal: mail" {
-      :Susun MailMessage\n(judul, tanggal, link itinerary);
-      :Kirim email\n(tercatat di log driver\njika SMTP belum diisi);
-    }
-    partition "Kanal: database" {
-      :Simpan baris notifications\n(itinerary_id, title, message);
-    }
-    |SendItineraryReminders|
+    :notify(ItineraryReminderNotification)\n-> masuk antrean (tabel jobs);
   endwhile (selesai)
   :Set reminder_sent_at = now()\npada itinerary ini\n(cegah kirim dobel);
 endwhile (selesai)
 
 :Selesai, log ringkasan\njumlah itinerary diproses;
+
+|Queue Worker|
+while (Ada job di antrean?) is (ya)
+  partition "Kanal: mail" {
+    :Susun MailMessage\n(judul, tanggal, link itinerary);
+    :Kirim email\n(tercatat di log driver\njika SMTP belum diisi);
+  }
+  partition "Kanal: database" {
+    :Simpan baris notifications\n(itinerary_id, title, message);
+  }
+endwhile (tidak)
 stop
 
 @enduml

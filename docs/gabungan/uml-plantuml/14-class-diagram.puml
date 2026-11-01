@@ -1,5 +1,5 @@
 @startuml 14-class-diagram
-title JogjaTrip - Class Diagram (Domain Model, Services, Notifications)
+title JogjaTrip - Class Diagram (Domain Model, Services, Auth/2FA, Notifications)
 
 skinparam class {
   BackgroundColor #FAF8F3
@@ -20,12 +20,32 @@ package "Models" {
     +avatar: string
     +google_id: string
     +email_verified_at: datetime
+    -remember_token: string
+    -two_factor_secret: string <<encrypted>>
+    -two_factor_recovery_codes: array <<encrypted>>
+    -two_factor_confirmed_at: datetime
+    -two_factor_last_used_step: int
     --
     +isAdmin(): bool
+    +hasTwoFactorEnabled(): bool
+    +recoveryCodesRemaining(): int
+    +trustedDevices(): HasMany<TrustedDevice>
     +favorites(): HasMany<Favorite>
     +reviews(): HasMany<Review>
     +itineraries(): HasMany<Itinerary>
     +collaboratingItineraries(): BelongsToMany<Itinerary>
+  }
+
+  class TrustedDevice {
+    +id: int
+    +user_id: int
+    -token_hash: string (SHA-256)
+    +user_agent: string
+    +ip_address: string
+    +last_used_at: datetime
+    +expires_at: datetime
+    --
+    +user(): BelongsTo<User>
   }
 
   class Category {
@@ -51,6 +71,7 @@ package "Models" {
     +price_max: int
     +open_time: time
     +close_time: time
+    +closed_days: array<int> (1=Senin..7=Minggu)
     +cover_photo: string
     +is_active: bool
     --
@@ -101,7 +122,9 @@ package "Models" {
     +title: string
     +start_date: date
     +end_date: date
+    +traveler_count: int (1-50)
     +type: enum(planned, today)
+    +share_token: string(40) nullable
     +reminder_sent_at: datetime
     --
     +user(): BelongsTo<User>
@@ -144,12 +167,21 @@ package "Services" {
   }
 
   class ScheduleValidator <<static>> {
-    +{static} validateDay(dayItems): array
+    +{static} validateDay(dayItems, date=null): array
     +{static} isWithinOperatingHours(item): bool
   }
 
   class NearestNeighborSorter <<static>> {
     +{static} sort(items, startLat=null, startLng=null): Collection
+  }
+
+  class ItineraryInsights <<static>> {
+    +{static} build(itinerary): array (mapPoints, warnings, travelInfo)
+    #{static} travelInfoBetween(items): array
+  }
+
+  class ItineraryCostEstimator {
+    +estimate(itinerary): array (days, total, travelers, group_total)
   }
 
   class WeatherService {
@@ -158,20 +190,16 @@ package "Services" {
 
   class LlmRecommendationService {
     +recommend(preferences): array
-    -buildPrompt(preferences, catalog): string
-    -mapToDestinations(recommendations, destinations): array
   }
 
   class AiItineraryPlannerService {
     +plan(preferences): array
-    -buildPrompt(preferences, catalog): string
-    -responseSchema(): array
-    -mapToDestinations(days, destinations, totalDays): array
   }
 
   interface CallsGeminiApi <<trait>> {
     #requestGeminiJson(prompt, responseSchema): array
-    -extractJson(text): string
+    -geminiModelChain(): array
+    -callGeminiModel(apiKey, model, prompt, schema): Response
   }
 
   interface BuildsDestinationCatalog <<trait>> {
@@ -179,14 +207,57 @@ package "Services" {
   }
 }
 
-package "Notifications" {
-  class ItineraryReminderNotification {
-    -itinerary: Itinerary
+package "Auth (2FA)" {
+  class TwoFactorGate {
+    +PENDING_TTL_MINUTES = 5
     --
-    +via(notifiable): array
-    +toMail(notifiable): MailMessage
-    +toArray(notifiable): array
+    +pass(request, user, method, intended): RedirectResponse
   }
+
+  class TwoFactorAuthenticator {
+    -RECOVERY_CODE_COUNT = 8
+    --
+    +generateSecret(): string
+    +qrCodeSvg(user, secret): string
+    +verifySecretCode(secret, code, lastUsedStep): ?int
+    +verifyUserCode(user, code): bool
+    +generateRecoveryCodes(): array (plain, hashed)
+    +useRecoveryCode(user, code): bool
+    +disable(user): void
+  }
+
+  class TrustedDeviceManager {
+    +COOKIE = "trusted_device"
+    +DAYS = 30
+    --
+    +trust(user, request): TrustedDevice
+    +isTrusted(user, request): bool
+    +revoke(device): void
+    +revokeAll(user): int
+  }
+
+  class SecureAccountAction {
+    +handle(user): void
+  }
+}
+
+package "Notifications (ShouldQueue: mail + database)" {
+  class ItineraryReminderNotification {
+    #itinerary: Itinerary
+  }
+  class NewLoginNotification {
+    #ipAddress: string
+    #device: string
+    #methodLabel: string
+    #at: CarbonInterface
+    --
+    -notMeUrl(notifiable): string
+  }
+  class RecoveryCodeUsedNotification {
+    #remaining: int
+  }
+  class TwoFactorEnabledNotification
+  class TwoFactorResetByAdminNotification
 }
 
 ' ===== Relasi antar model =====
@@ -198,6 +269,7 @@ User "1" -- "many" Favorite
 Favorite "many" -- "1" Destination
 User "1" -- "many" Review
 Review "many" -- "1" Destination
+User "1" *-- "many" TrustedDevice : perangkat tepercaya >
 
 User "1" -- "many" Itinerary : memiliki (owner) >
 Itinerary "many" -- "many" User : kolaborator\n(itinerary_collaborators) >
@@ -209,6 +281,8 @@ ItineraryItem <.. NearestNeighborSorter : mengurutkan
 Destination <.. DistanceService : hitung jarak
 Destination <.. LlmRecommendationService : katalog rekomendasi
 Destination <.. AiItineraryPlannerService : katalog itinerary
+Itinerary <.. ItineraryInsights : peta, peringatan,\njarak per hari
+Itinerary <.. ItineraryCostEstimator : estimasi biaya tiket
 Itinerary <.. ItineraryReminderNotification : dikirim untuk
 
 LlmRecommendationService ..|> CallsGeminiApi : use
@@ -216,7 +290,22 @@ LlmRecommendationService ..|> BuildsDestinationCatalog : use
 AiItineraryPlannerService ..|> CallsGeminiApi : use
 AiItineraryPlannerService ..|> BuildsDestinationCatalog : use
 NearestNeighborSorter ..> DistanceService : memakai
+ItineraryInsights ..> ScheduleValidator : memakai
+ItineraryInsights ..> DistanceService : memakai
 ScheduleValidator ..> OperatingHoursService : memakai
 Destination ..> OperatingHoursService : isOpenNow()
+
+' ===== Auth / 2FA =====
+TwoFactorGate ..> TrustedDeviceManager : memakai
+TwoFactorGate ..> User : memeriksa 2FA
+TrustedDeviceManager ..> TrustedDevice : kelola
+SecureAccountAction ..> TrustedDeviceManager : revokeAll()
+SecureAccountAction ..> TwoFactorAuthenticator : disable()
+TwoFactorAuthenticator ..> User : baca/tulis kolom 2FA
+
+User <.. NewLoginNotification : dikirim ke
+User <.. RecoveryCodeUsedNotification : dikirim ke
+User <.. TwoFactorEnabledNotification : dikirim ke
+User <.. TwoFactorResetByAdminNotification : dikirim ke
 
 @enduml

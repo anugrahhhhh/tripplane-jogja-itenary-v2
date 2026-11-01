@@ -1,0 +1,81 @@
+@startuml 16-sequence-verifikasi-2fa
+title Sequence Diagram - Gerbang 2FA & Verifikasi Kode Saat Masuk
+
+skinparam sequence {
+  ArrowColor #2F6B5A
+  LifeLineBorderColor #2F6B5A
+  ParticipantBorderColor #2F6B5A
+  ParticipantBackgroundColor #FAF8F3
+  ActorBackgroundColor #E8D5DA
+}
+
+actor Pengguna
+participant "Login Controller\n(password / Google / Admin)" as LoginCtrl
+participant "TwoFactorGate" as Gate
+participant "TrustedDeviceManager" as Trusted
+participant "Session" as Session
+participant "TwoFactorChallengeController" as Challenge
+participant "RateLimiter" as RL
+participant "TwoFactorAuthenticator\n(Google2FA)" as TFA
+participant "Auth" as Auth
+database "MySQL\n(users, trusted_devices,\nnotifications, jobs)" as DB
+
+== Gerbang setelah kredensial utama benar ==
+LoginCtrl -> Gate : pass(request, user, method, intended)
+alt user belum mengaktifkan 2FA
+  Gate -> Auth : login(user)
+  Gate -> Session : regenerate(), simpan url.intended
+  Gate --> Pengguna : redirect /dua-faktor/aktifkan
+  note right : alur aktivasi: Activity Diagram 02g-02h
+else 2FA aktif
+  Gate -> Trusted : isTrusted(user, cookie trusted_device)
+  Trusted -> DB : SELECT trusted_devices\nWHERE token_hash = sha256(cookie)\nAND expires_at > now()
+  alt perangkat tepercaya
+    Trusted -> DB : UPDATE last_used_at
+    Gate -> Auth : login(user)
+    Gate --> Pengguna : redirect ke tujuan
+  else belum tepercaya
+    Gate -> Session : put two_factor.pending\n{user_id, method, intended,\nexpires_at = now + 5 menit}
+    Gate --> Pengguna : redirect /dua-faktor
+  end
+end
+
+== Verifikasi kode ==
+Pengguna -> Challenge : POST /dua-faktor\n(code | recovery_code, trust_device)
+Challenge -> Session : get two_factor.pending
+alt pending hilang / kedaluwarsa / 2FA user sudah tidak aktif
+  Challenge --> Pengguna : redirect /login atau /admin/login\n+ "Waktu habis, silakan masuk lagi"
+else pending valid
+  Challenge -> RL : tooManyAttempts(two-factor:user|ip, 5)
+  alt terlampaui
+    Challenge --> Pengguna : 302 kembali + "Terlalu banyak percobaan"
+  else
+    Challenge -> RL : hit(key, 60 detik)
+    alt memakai kode authenticator
+      Challenge -> TFA : verifyUserCode(user, code)
+    else memakai recovery code
+      Challenge -> TFA : useRecoveryCode(user, code)
+      TFA -> DB : UPDATE users (hapus kode terpakai)
+    end
+    alt kode salah
+      Challenge --> Pengguna : 302 kembali + "Kode salah"
+    else kode benar
+      Challenge -> RL : clear(key)
+      Challenge -> Session : forget two_factor.pending
+      Challenge -> Auth : login(user)
+      Challenge -> Session : regenerate()
+      opt trust_device dicentang
+        Challenge -> Trusted : trust(user, request)
+        Trusted -> DB : INSERT trusted_devices\n(token_hash, user_agent, ip,\nexpires_at = now + 30 hari)
+        Trusted --> Pengguna : set cookie trusted_device\n(HttpOnly, 30 hari)
+      end
+      Challenge -> DB : antre NewLoginNotification\n(IP, perangkat, metode, tombol "Bukan saya")
+      opt memakai recovery code
+        Challenge -> DB : antre RecoveryCodeUsedNotification\n(sisa recovery code)
+      end
+      Challenge --> Pengguna : redirect ke tujuan\n(Beranda / Dashboard Admin)
+    end
+  end
+end
+
+@enduml
