@@ -1,0 +1,50 @@
+@startuml 02b-activity-login-google
+title Activity Diagram - Masuk dengan Google (Traveler)
+
+skinparam activity {
+  BackgroundColor #FAF8F3
+  BorderColor #2F6B5A
+  ArrowColor #2F6B5A
+  DiamondBackgroundColor #E8D5DA
+}
+skinparam swimlane {
+  BorderColor #2F6B5A
+}
+
+|Traveler|
+start
+:Buka halaman Masuk;
+:Klik "Lanjutkan dengan Google";
+
+|Google|
+:Tampilkan halaman persetujuan akses;
+
+|Traveler|
+:Pilih akun Google dan setujui akses;
+
+|Sistem|
+if (Data profil dari Google\nberhasil diterima?) then (tidak)
+  :Tampilkan pesan\n"Gagal masuk dengan Google";
+  stop
+endif
+
+:Cari akun berdasarkan ID Google,\nlalu berdasarkan email;
+
+if (Akun ditemukan?) then (ya)
+  if (Akun ini akun Admin?) then (ya)
+    :Tampilkan pesan\n"Akun Admin masuk lewat halaman Admin";
+    stop
+  else (tidak)
+    :Hubungkan akun dengan Google\n(jika belum terhubung);
+  endif
+else (tidak)
+  :Buat akun Traveler baru\n(email langsung terverifikasi);
+endif
+
+:Lanjut ke pemeriksaan 2FA\n(lihat diagram 02d);
+
+|Traveler|
+:Masuk ke Beranda\n(setelah lolos 2FA);
+stop
+
+@enduml

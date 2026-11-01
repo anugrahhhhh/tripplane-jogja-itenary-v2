@@ -13,8 +13,9 @@ participant "Scheduler\n(cron: schedule:run)" as Cron
 participant "SendItineraryReminders" as Cmd
 participant "Itinerary (Model)" as Itin
 database "MySQL" as DB
-participant "ItineraryReminderNotification" as Notif
+participant "ItineraryReminderNotification\n(ShouldQueue)" as Notif
 participant "User (Model)" as UserModel
+participant "Queue Worker\n(queue:work, driver database)" as Worker
 participant "Mail Driver\n(log, saat SMTP belum diisi)" as Mail
 
 Cron -> Cmd : handle()\n(dijadwalkan dailyAt('08:00'))
@@ -30,14 +31,21 @@ else ada itinerary
     Cmd -> Cmd : kumpulkan penerima\n(owner + collaborators, unique)
     loop untuk setiap penerima
       Cmd -> UserModel : notify(new ItineraryReminderNotification($itinerary))
-      UserModel -> Notif : via() => ['mail', 'database']
-      Notif -> Mail : kirim MailMessage\n(judul, tanggal, tombol "Lihat Itinerary")
-      Notif -> DB : INSERT INTO notifications\n(type, notifiable, data JSON)
+      UserModel -> DB : INSERT INTO jobs\n(notifikasi masuk antrean)
     end
     Cmd -> Itin : forceFill(reminder_sent_at=now())->save()
     Itin -> DB : UPDATE itineraries
   end
   Cmd --> Cron : log ringkasan jumlah terkirim
+end
+
+... diproses oleh queue worker ...
+loop untuk setiap job di antrean
+  Worker -> DB : ambil job dari tabel jobs
+  Worker -> Notif : via() => ['mail', 'database']
+  Notif -> Mail : kirim MailMessage\n(judul, tanggal, tombol "Lihat Itinerary")
+  Notif -> DB : INSERT INTO notifications\n(type, notifiable, data JSON)
+  Worker -> DB : hapus job (atau pindah ke failed_jobs jika gagal)
 end
 
 ... nanti, di sisi traveler ...

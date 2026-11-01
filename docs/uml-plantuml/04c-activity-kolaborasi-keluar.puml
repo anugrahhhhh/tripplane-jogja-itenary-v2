@@ -1,0 +1,32 @@
+@startuml 04c-activity-kolaborasi-keluar
+title Activity Diagram - Keluar dari Itinerary (oleh Kolaborator)
+
+skinparam activity {
+  BackgroundColor #FAF8F3
+  BorderColor #2F6B5A
+  ArrowColor #2F6B5A
+  DiamondBackgroundColor #E8D5DA
+}
+skinparam swimlane {
+  BorderColor #2F6B5A
+}
+
+|Kolaborator|
+start
+:Buka halaman Itinerary;
+:Klik "Keluar";
+
+|Sistem|
+if (Yang keluar adalah\nkolaborator di itinerary ini?) then (tidak)
+  :Tolak, akses tidak diizinkan;
+  stop
+endif
+
+:Hapus dari daftar kolaborator;
+:Tampilkan pesan\n"Kamu keluar dari itinerary ini";
+
+|Kolaborator|
+:Diarahkan ke daftar Itinerary;
+stop
+
+@enduml

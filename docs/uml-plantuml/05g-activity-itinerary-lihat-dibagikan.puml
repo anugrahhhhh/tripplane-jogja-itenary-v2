@@ -1,0 +1,43 @@
+@startuml 05g-activity-itinerary-lihat-dibagikan
+title Activity Diagram - Melihat Itinerary yang Dibagikan (Tanpa Login)
+
+skinparam activity {
+  BackgroundColor #FAF8F3
+  BorderColor #2F6B5A
+  ArrowColor #2F6B5A
+  DiamondBackgroundColor #E8D5DA
+}
+skinparam swimlane {
+  BorderColor #2F6B5A
+}
+
+|Pengunjung|
+start
+:Buka link /bagikan/{token};
+
+|Sistem|
+if (Terlalu banyak permintaan\n(maks. 60 per menit)?) then (ya)
+  :Tolak permintaan (429);
+  stop
+endif
+
+if (Format token valid\n(40 huruf/angka)?) then (tidak)
+  :Tampilkan halaman\n"Tidak ditemukan" (404);
+  stop
+endif
+
+if (Ada itinerary dengan token ini?) then (tidak)
+  :Tampilkan halaman\n"Tidak ditemukan" (404);
+  stop
+endif
+
+:Siapkan peta, peringatan jadwal,\ndan jarak antar destinasi;
+:Hitung estimasi biaya tiket;
+:Tampilkan halaman read-only\n(tanpa nama pemilik, kolaborator,\ndan catatan item);
+:Tandai halaman agar tidak diindeks\nmesin pencari (noindex);
+
+|Pengunjung|
+:Melihat jadwal, peta,\ndan estimasi biaya;
+stop
+
+@enduml

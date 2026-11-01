@@ -1,0 +1,30 @@
+@startuml 02h-activity-aktifkan-2fa-recovery-code
+title Activity Diagram - Aktifkan 2FA (2/2): Menyimpan Recovery Code
+
+skinparam activity {
+  BackgroundColor #FAF8F3
+  BorderColor #2F6B5A
+  ArrowColor #2F6B5A
+  DiamondBackgroundColor #E8D5DA
+}
+skinparam swimlane {
+  BorderColor #2F6B5A
+}
+
+|Sistem|
+start
+:Tampilkan 8 recovery code yang baru dibuat\n(hanya sekali, tidak bisa dilihat lagi);
+
+|Pengguna|
+:Simpan recovery code di tempat aman;
+:Klik "Saya sudah menyimpannya";
+
+|Sistem|
+:Hapus recovery code dari sesi;
+:Arahkan ke halaman tujuan awal\n(Beranda / Dashboard Admin);
+
+|Pengguna|
+:Mulai memakai aplikasi;
+stop
+
+@enduml

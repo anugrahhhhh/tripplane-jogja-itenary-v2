@@ -1,0 +1,46 @@
+@startuml 02e-activity-2fa-input-kode
+title Activity Diagram - Verifikasi 2FA (2/3): Memasukkan Kode 2FA
+
+skinparam activity {
+  BackgroundColor #FAF8F3
+  BorderColor #2F6B5A
+  ArrowColor #2F6B5A
+  DiamondBackgroundColor #E8D5DA
+}
+skinparam swimlane {
+  BorderColor #2F6B5A
+}
+
+|Pengguna|
+start
+:Buka halaman Verifikasi 2FA;
+
+repeat
+  |Pengguna|
+  :Isi kode 6 digit dari aplikasi authenticator\natau satu recovery code;
+  :Centang "Percayai perangkat ini" (opsional);
+  :Klik "Verifikasi";
+
+  |Sistem|
+  if (Status menunggu sudah lewat 5 menit?) then (ya)
+    :Tampilkan pesan\n"Waktu habis, silakan masuk lagi";
+    |Pengguna|
+    :Kembali ke halaman Masuk;
+    stop
+  endif
+  |Sistem|
+  if (Terlalu sering salah\n(maks. 5 kali per menit)?) then (ya)
+    :Tampilkan pesan\n"Terlalu banyak percobaan";
+  else (tidak)
+    if (Kode benar?) then (tidak)
+      :Tampilkan pesan "Kode salah";
+    else (ya)
+    endif
+  endif
+repeat while (Kode belum diterima?) is (ya, coba lagi)
+-> kode diterima;
+
+:Lanjut ke proses setelah kode benar\n(lihat diagram 02f);
+stop
+
+@enduml

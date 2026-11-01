@@ -1,0 +1,38 @@
+@startuml 02d-activity-2fa-gerbang
+title Activity Diagram - Verifikasi 2FA (1/3): Gerbang 2FA Setelah Password/Google Benar
+
+skinparam activity {
+  BackgroundColor #FAF8F3
+  BorderColor #2F6B5A
+  ArrowColor #2F6B5A
+  DiamondBackgroundColor #E8D5DA
+}
+skinparam swimlane {
+  BorderColor #2F6B5A
+}
+
+|Sistem|
+start
+note right
+  Dijalankan setelah password atau
+  akun Google dinyatakan benar
+  (diagram 02a, 02b, 02c).
+end note
+
+if (Pengguna sudah mengaktifkan 2FA?) then (belum)
+  :Masukkan pengguna ke sistem;
+  :Arahkan ke halaman Aktifkan 2FA\n(lihat diagram 02g);
+  stop
+endif
+
+if (Perangkat ini sudah tepercaya\n(cookie valid, belum lewat 30 hari)?) then (ya)
+  :Masukkan pengguna ke sistem\ntanpa meminta kode;
+  :Arahkan ke halaman tujuan;
+  stop
+endif
+
+:Simpan status "menunggu kode 2FA"\n(berlaku 5 menit, pengguna belum masuk);
+:Arahkan ke halaman Verifikasi 2FA\n(lihat diagram 02e);
+stop
+
+@enduml

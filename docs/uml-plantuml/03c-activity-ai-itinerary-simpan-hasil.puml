@@ -1,0 +1,33 @@
+@startuml 03c-activity-ai-itinerary-simpan-hasil
+title Activity Diagram - Susun Itinerary dengan AI (3/3): Memeriksa & Menyimpan Hasil
+
+skinparam activity {
+  BackgroundColor #FAF8F3
+  BorderColor #2F6B5A
+  ArrowColor #2F6B5A
+  DiamondBackgroundColor #E8D5DA
+}
+skinparam swimlane {
+  BorderColor #2F6B5A
+}
+
+|Sistem|
+start
+:Terima jadwal dari layanan AI;
+:Periksa jawaban AI\n(hanya destinasi yang valid,\njam dan durasi yang wajar);
+
+if (Masih ada jadwal yang bisa dipakai?) then (tidak)
+  :Tampilkan pesan\n"AI tidak berhasil menyusun itinerary";
+  |Traveler|
+  :Membaca pesan, lalu mengubah preferensi;
+  stop
+endif
+|Sistem|
+
+:Simpan itinerary beserta destinasi\ndi setiap harinya (dalam satu transaksi);
+
+|Traveler|
+:Melihat itinerary hasil susunan AI\n(bisa diubah manual);
+stop
+
+@enduml

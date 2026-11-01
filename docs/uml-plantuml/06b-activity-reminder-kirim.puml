@@ -1,0 +1,32 @@
+@startuml 06b-activity-reminder-kirim
+title Activity Diagram - Pengingat Itinerary H-1 (2/2): Mengirim Pengingat ke Satu Penerima
+
+skinparam activity {
+  BackgroundColor #FAF8F3
+  BorderColor #2F6B5A
+  ArrowColor #2F6B5A
+  DiamondBackgroundColor #E8D5DA
+}
+skinparam swimlane {
+  BorderColor #2F6B5A
+}
+
+|Sistem|
+start
+:Masukkan pengingat ke antrean (queue);
+
+|Queue Worker|
+:Ambil pengingat dari antrean;
+:Susun pesan pengingat\n(judul itinerary, tanggal, tautan);
+fork
+  :Kirim pengingat lewat email;
+fork again
+  :Simpan pengingat sebagai notifikasi\ndi dalam aplikasi;
+end fork
+
+|Penerima|
+:Menerima email pengingat;
+:Melihat notifikasi di aplikasi\n(ikon lonceng);
+stop
+
+@enduml

@@ -1,0 +1,45 @@
+@startuml 02g-activity-aktifkan-2fa-pindai-qr
+title Activity Diagram - Aktifkan 2FA (1/2): Pindai QR & Konfirmasi Kode
+
+skinparam activity {
+  BackgroundColor #FAF8F3
+  BorderColor #2F6B5A
+  ArrowColor #2F6B5A
+  DiamondBackgroundColor #E8D5DA
+}
+skinparam swimlane {
+  BorderColor #2F6B5A
+}
+
+|Pengguna|
+start
+:Masuk tetapi 2FA belum aktif;
+note right
+  2FA wajib untuk semua akun. Selama belum
+  aktif, halaman lain dikunci dan pengguna
+  selalu diarahkan ke halaman Aktifkan 2FA.
+end note
+
+|Sistem|
+:Buat kunci rahasia 2FA\n(disimpan sementara di sesi);
+:Tampilkan kode QR dan kunci teks;
+
+|Pengguna|
+:Pindai kode QR dengan\naplikasi authenticator;
+
+repeat
+  |Pengguna|
+  :Isi kode 6 digit dari aplikasi;
+  :Klik "Aktifkan";
+  |Sistem|
+  backward :Tampilkan pesan\n"Kode tidak valid atau kedaluwarsa";
+repeat while (Kode cocok dengan kunci rahasia?) is (tidak)
+-> ya;
+
+:Buat 8 recovery code;
+:Simpan kunci rahasia dan recovery code\n(terenkripsi), tandai 2FA aktif;
+:Kirim notifikasi "2FA berhasil diaktifkan"\n(email + aplikasi);
+:Lanjut ke tampilan recovery code\n(lihat diagram 02h);
+stop
+
+@enduml

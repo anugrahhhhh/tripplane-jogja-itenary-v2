@@ -34,33 +34,48 @@ else belum terlampaui
     Ctrl -> Planner : plan(preferensi)
     Planner -> Dest : where(is_active)->with(category)->get()
     Dest -> DB : SELECT * FROM destinations JOIN categories
-    DB --> Dest : 72 baris destinasi
+    DB --> Dest : daftar destinasi aktif
     Dest --> Planner : Collection<Destination>
     Planner -> Planner : buildDestinationCatalog()\n(ringkas + hitung jarak opsional)
     Planner -> Planner : buildPrompt()
 
-    Planner -> Gemini : POST generateContent\n(prompt + responseSchema)
-    alt 503 / 429 (maks 3x retry)
-      Gemini --> Planner : error transient
-      Planner -> Planner : tunggu 1.5s, ulangi
+    loop untuk setiap model (utama, lalu cadangan)
+      Planner -> Gemini : POST models/{model}:generateContent\n(prompt + responseSchema, timeout 20s)
+      alt 429 / 503 / timeout
+        Planner -> Gemini : coba ulang 1x (jeda 1 detik)
+      end
+      alt 200 OK
+        Gemini --> Planner : {"days":[{"day_number":1,"items":[...]}]}
+        note right : keluar dari loop
+      else 404 / 429 / 503 / timeout
+        Gemini --> Planner : error
+        Planner -> Planner : catat log, pindah ke model cadangan
+      else error lain (mis. 400 / 401)
+        Gemini --> Planner : error
+        note right : berhenti, tidak mencoba model lain
+      end
     end
-    Gemini --> Planner : 200 OK\n{"days":[{"day_number":1,"items":[...]}]}
 
-    alt request tetap gagal
-      Planner --> Ctrl : throw RuntimeException
-      Ctrl --> Traveler : 302 kembali + error AI
+    alt semua model gagal
+      Planner --> Ctrl : throw RuntimeException\n"Server AI sedang sangat sibuk"
+      Ctrl --> Traveler : 302 kembali + error AI (input tetap terisi)
     else berhasil
       Planner -> Planner : decode JSON, petakan\ndestination_id -> Destination asli
       Planner --> Ctrl : array days => items[destination, start_time,\nduration_minutes, note]
 
-      Ctrl -> Itin : create(user, title, start_date,\nend_date, type=planned)
-      Itin -> DB : INSERT INTO itineraries
-      loop untuk setiap hari & item
-        Ctrl -> Item : create(itinerary_id, destination_id,\nday_number, start_time, duration_minutes,\nsort_order, notes)
-        Item -> DB : INSERT INTO itinerary_items
+      alt hasil kosong
+        Ctrl --> Traveler : 302 kembali + "AI tidak berhasil\nmenyusun itinerary"
+      else ada jadwal
+        group DB::transaction
+          Ctrl -> Itin : create(user, title, start_date,\nend_date, type=planned)
+          Itin -> DB : INSERT INTO itineraries
+          loop untuk setiap hari & item
+            Ctrl -> Item : create(itinerary_id, destination_id,\nday_number, start_time, duration_minutes,\nsort_order, notes)
+            Item -> DB : INSERT INTO itinerary_items
+          end
+        end
+        Ctrl --> Traveler : redirect ke Itinerary\n+ status sukses
       end
-
-      Ctrl --> Traveler : redirect ke Itinerary\n+ status sukses
     end
   end
 end

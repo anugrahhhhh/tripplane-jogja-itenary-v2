@@ -1,0 +1,32 @@
+@startuml 04b-activity-kolaborasi-keluarkan
+title Activity Diagram - Mengeluarkan Kolaborator (oleh Pemilik)
+
+skinparam activity {
+  BackgroundColor #FAF8F3
+  BorderColor #2F6B5A
+  ArrowColor #2F6B5A
+  DiamondBackgroundColor #E8D5DA
+}
+skinparam swimlane {
+  BorderColor #2F6B5A
+}
+
+|Pemilik Itinerary|
+start
+:Buka halaman Itinerary;
+:Klik "Keluarkan" pada nama kolaborator;
+
+|Sistem|
+if (Yang mengeluarkan adalah\npemilik itinerary ini?) then (tidak)
+  :Tolak, akses tidak diizinkan;
+  stop
+endif
+
+:Hapus kolaborator dari itinerary;
+:Tampilkan pesan\n"Kolaborator berhasil dikeluarkan";
+
+|Pemilik Itinerary|
+:Melihat daftar kolaborator terbaru;
+stop
+
+@enduml

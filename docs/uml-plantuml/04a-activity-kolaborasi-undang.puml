@@ -1,0 +1,53 @@
+@startuml 04a-activity-kolaborasi-undang
+title Activity Diagram - Mengundang Kolaborator
+
+skinparam activity {
+  BackgroundColor #FAF8F3
+  BorderColor #2F6B5A
+  ArrowColor #2F6B5A
+  DiamondBackgroundColor #E8D5DA
+}
+skinparam swimlane {
+  BorderColor #2F6B5A
+}
+
+|Pemilik Itinerary|
+start
+:Buka halaman Itinerary;
+:Isi email Traveler yang ingin diundang;
+:Klik "Undang";
+
+|Sistem|
+if (Yang mengundang adalah\npemilik itinerary ini?) then (tidak)
+  :Tolak, akses tidak diizinkan;
+  stop
+endif
+
+if (Ada akun dengan email tersebut?) then (tidak)
+  :Tampilkan pesan\n"Belum ada akun dengan email ini";
+  stop
+endif
+
+if (Email tersebut milik pemilik sendiri?) then (ya)
+  :Tampilkan pesan\n"Ini email kamu sendiri";
+  stop
+endif
+
+if (Akun tersebut akun Admin?) then (ya)
+  :Tampilkan pesan\n"Akun Admin tidak bisa diundang";
+  stop
+endif
+
+if (Sudah menjadi kolaborator?) then (ya)
+  :Tampilkan pesan\n"Sudah menjadi kolaborator";
+  stop
+endif
+
+:Tambahkan sebagai kolaborator;
+:Tampilkan pesan berhasil diundang;
+
+|Pemilik Itinerary|
+:Melihat daftar kolaborator terbaru;
+stop
+
+@enduml

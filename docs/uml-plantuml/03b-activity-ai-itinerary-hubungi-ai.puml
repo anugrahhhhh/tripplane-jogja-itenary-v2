@@ -1,0 +1,39 @@
+@startuml 03b-activity-ai-itinerary-hubungi-ai
+title Activity Diagram - Susun Itinerary dengan AI (2/3): Menghubungi Layanan AI
+
+skinparam activity {
+  BackgroundColor #FAF8F3
+  BorderColor #2F6B5A
+  ArrowColor #2F6B5A
+  DiamondBackgroundColor #E8D5DA
+}
+skinparam swimlane {
+  BorderColor #2F6B5A
+}
+
+|Sistem|
+start
+:Kumpulkan daftar destinasi wisata yang aktif\n(+ jarak dari lokasi awal, jika diisi);
+:Siapkan permintaan berisi preferensi Traveler\ndan daftar destinasi;
+:Kirim permintaan ke model AI utama\n(coba ulang singkat jika sibuk);
+
+|Layanan AI|
+:Susun jadwal wisata per hari;
+
+|Sistem|
+while (Model sibuk / tidak tersedia\ndan masih ada model cadangan?) is (ya)
+  :Kirim ulang permintaan\nke model AI cadangan;
+endwhile (tidak)
+
+if (Ada model yang berhasil menjawab?) then (tidak)
+  :Tampilkan pesan\n"Server AI sedang sangat sibuk";
+  |Traveler|
+  :Membaca pesan, form tetap terisi;
+  stop
+endif
+|Sistem|
+
+:Lanjut ke pemeriksaan hasil AI\n(lihat diagram 03c);
+stop
+
+@enduml
