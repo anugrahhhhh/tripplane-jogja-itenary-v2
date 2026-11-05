@@ -18,6 +18,7 @@ class Itinerary extends Model
         'title',
         'start_date',
         'end_date',
+        'traveler_count',
         'type',
     ];
 
@@ -26,6 +27,7 @@ class Itinerary extends Model
         return [
             'start_date' => 'date',
             'end_date' => 'date',
+            'traveler_count' => 'integer',
             'reminder_sent_at' => 'datetime',
         ];
     }

@@ -1,5 +1,5 @@
 @startuml 07-sequence-login
-title Sequence Diagram - Masuk (Traveler vs Admin, pintu terpisah)
+title Sequence Diagram - Masuk (Traveler vs Admin, pintu terpisah, lewat gerbang 2FA)
 
 skinparam sequence {
   ArrowColor #2F6B5A
@@ -14,48 +14,57 @@ actor Admin
 participant "AuthenticatedSessionController\n(/login)" as TravelerCtrl
 participant "AdminAuthenticatedSessionController\n(/admin/login)" as AdminCtrl
 participant "LoginRequest" as Req
-participant "Auth (Guard: web)" as Auth
+participant "RateLimiter" as RL
+participant "UserProvider\n(guard: web)" as Provider
 database "MySQL\n(users)" as DB
+participant "TwoFactorGate" as Gate
 
 == Traveler login lewat /login ==
 Traveler -> TravelerCtrl : POST /login (email, password)
-TravelerCtrl -> Req : authenticate()
-Req -> Auth : attempt(credentials)
-Auth -> DB : SELECT * FROM users WHERE email = ?
-DB --> Auth : baris user
-Auth --> Req : true / false
-alt kredensial salah
-  Req --> TravelerCtrl : ValidationException
+TravelerCtrl -> Req : validatedUser()
+Req -> RL : tooManyAttempts(email|ip, 5)
+alt terlampaui
+  Req --> TravelerCtrl : ValidationException\n"coba lagi dalam N detik"
   TravelerCtrl --> Traveler : 302 kembali + error
-else kredensial benar
-  TravelerCtrl -> TravelerCtrl : cek user->isAdmin()
-  alt user adalah admin
-    TravelerCtrl -> Auth : logout()
-    TravelerCtrl --> Traveler : redirect /login\n+ error "akun Admin"
-  else user adalah traveler
-    TravelerCtrl -> Auth : session()->regenerate()
-    TravelerCtrl --> Traveler : redirect Beranda
+else belum terlampaui
+  Req -> Provider : retrieveByCredentials(email)
+  Provider -> DB : SELECT * FROM users WHERE email = ?
+  DB --> Provider : baris user / kosong
+  Req -> Provider : validateCredentials(user, password)
+  alt kredensial salah
+    Req -> RL : hit(email|ip)
+    Req --> TravelerCtrl : ValidationException
+    TravelerCtrl --> Traveler : 302 kembali + error
+  else kredensial benar
+    Req -> RL : clear(email|ip)
+    Req --> TravelerCtrl : User
+    alt user->isAdmin()
+      TravelerCtrl --> Traveler : 302 kembali + error\n"Akun Admin, masuk lewat halaman Admin"
+      note right : belum ada sesi login,\njadi tidak perlu logout
+    else traveler
+      TravelerCtrl -> Gate : pass(request, user, 'password',\nintended = Beranda)
+      Gate --> TravelerCtrl : redirect (setup 2FA / tujuan / challenge)
+      TravelerCtrl --> Traveler : redirect
+      note right : rincian keputusan gerbang 2FA\nada di Sequence Diagram 16
+    end
   end
 end
 
 == Admin login lewat /admin/login ==
 Admin -> AdminCtrl : POST /admin/login (email, password)
-AdminCtrl -> Req : authenticate()
-Req -> Auth : attempt(credentials)
-Auth -> DB : SELECT * FROM users WHERE email = ?
-DB --> Auth : baris user
-Auth --> Req : true / false
-alt kredensial salah
+AdminCtrl -> Req : validatedUser()
+Req -> RL : tooManyAttempts / validasi kredensial\n(sama seperti di atas)
+alt kredensial salah / terlampaui
   Req --> AdminCtrl : ValidationException
   AdminCtrl --> Admin : 302 kembali + error
 else kredensial benar
-  AdminCtrl -> AdminCtrl : cek user->isAdmin()
+  Req --> AdminCtrl : User
   alt bukan admin
-    AdminCtrl -> Auth : logout()
-    AdminCtrl --> Admin : redirect /admin/login\n+ error "bukan akun Admin"
+    AdminCtrl --> Admin : 302 kembali + error\n"bukan akun Admin"
   else admin sah
-    AdminCtrl -> Auth : session()->regenerate()
-    AdminCtrl --> Admin : redirect /admin (Dashboard)
+    AdminCtrl -> Gate : pass(request, user, 'password',\nintended = /admin)
+    Gate --> AdminCtrl : redirect (setup 2FA / Dashboard / challenge)
+    AdminCtrl --> Admin : redirect
   end
 end
 

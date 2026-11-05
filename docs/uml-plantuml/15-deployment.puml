@@ -1,5 +1,5 @@
 @startuml 15-deployment
-title JogjaTrip - Deployment Diagram
+title JogjaTrip - Deployment Diagram (Production)
 
 skinparam node {
   BackgroundColor #FAF8F3
@@ -13,34 +13,43 @@ skinparam cloud {
   BackgroundColor #FFFFFF
   BorderColor #2F6B5A
 }
+skinparam note {
+  BackgroundColor #FFFBE6
+  BorderColor #B59B3A
+}
 
 node "Perangkat Pengguna" as ClientDevice {
   node "Browser" as Browser {
     artifact "Blade + Tailwind + Alpine.js" as Frontend
     artifact "Service Worker (sw.js)\nPWA cache offline" as SW
     artifact "manifest.json\n(installable)" as Manifest
+    artifact "Cookie sesi +\ncookie trusted_device (30 hari)" as Cookies
   }
+  node "Aplikasi Authenticator\n(Google Authenticator, dll.)" as AuthApp
 }
 
-node "Server Lokal (Laragon, Windows)" as ServerHost {
-  node "Web Server\n(Apache/Nginx)" as WebServer
+node "Server Aplikasi\n(Linux - VPS / Cloud Hosting)" as ServerHost {
+  node "Web Server\n(Nginx + TLS/HTTPS)" as WebServer
 
   node "Application Server\nPHP 8.2-FPM" as AppServer {
     artifact "Laravel 12 App" as Laravel {
-      component "Controllers" as Controllers
-      component "Services\n(AI, Weather, Distance, dll.)" as Services
+      component "Controllers\n(+ middleware 2FA wajib,\nlogout saat idle)" as Controllers
+      component "Services\n(AI, Weather, Distance,\nInsights, Cost, dll.)" as Services
+      component "Auth 2FA\n(TwoFactorGate, Google2FA,\nTrustedDeviceManager)" as Auth2fa
       component "Eloquent Models" as Models
-      component "Notifications\n(mail + database channel)" as Notifications
+      component "Notifications\n(ShouldQueue: mail + database)" as Notifications
+      component "PDF (DomPDF)" as Pdf
     }
-    artifact "Scheduler\n(php artisan schedule:run\nvia cron/Task Scheduler)" as Scheduler
-    artifact "Queue: sync\n(job dieksekusi langsung,\ntanpa worker terpisah)" as Queue
+    artifact "Scheduler\n(php artisan schedule:run\nvia cron, tiap menit)" as Scheduler
+    artifact "Queue Worker\n(php artisan queue:work,\ndriver: database)" as QueueWorker
   }
 
   database "MySQL 8.0\n(database: jogjatrip)" as MySQL {
-    folder "Tabel utama" as Tables {
+    folder "Tabel" as Tables {
       artifact "users, categories, destinations,\ndestination_photos, favorites, reviews" as T1
       artifact "itineraries, itinerary_items,\nitinerary_collaborators" as T2
-      artifact "notifications, cache, sessions,\njobs" as T3
+      artifact "trusted_devices,\npassword_reset_tokens, sessions" as T3
+      artifact "notifications, jobs, job_batches,\nfailed_jobs, cache, cache_locks" as T4
     }
   }
 
@@ -50,12 +59,20 @@ node "Server Lokal (Laragon, Windows)" as ServerHost {
 }
 
 cloud "Layanan Eksternal" as External {
-  node "Google Generative AI\n(Gemini API)" as Gemini
+  node "Google Generative AI\n(Gemini API: model utama\n+ model cadangan)" as Gemini
   node "Google OAuth 2.0" as GoogleOAuth
   node "Open-Meteo API\n(prakiraan cuaca, gratis)" as OpenMeteo
   node "OpenStreetMap\n(tile server peta)" as OSM
   node "SMTP Server\n(opsional, saat ini: log driver)" as SMTP
 }
+
+note bottom of ServerHost
+  Lingkungan pengembangan: Laragon (Windows, localhost),
+  dijalankan dengan "composer dev" (serve + queue:listen + vite).
+  Lingkungan produksi: server Linux dengan domain + HTTPS.
+  Database & storage dapat dipisah ke host/layanan
+  terkelola (managed DB, object storage) bila diperlukan.
+end note
 
 Browser --> WebServer : HTTPS (form, AJAX,\nfetch API)
 WebServer --> AppServer : FastCGI (PHP-FPM)
@@ -63,18 +80,26 @@ AppServer --> MySQL : Eloquent ORM\n(TCP 3306)
 AppServer --> Storage : simpan/baca file upload
 
 Controllers --> Services
+Controllers --> Auth2fa
+Controllers --> Pdf
 Services --> Models
+Auth2fa --> Models
 Models --> MySQL
 
 Services --> Gemini : HTTPS REST\n(LlmRecommendationService,\nAiItineraryPlannerService)
 Services --> OpenMeteo : HTTPS REST\n(WeatherService)
 AppServer --> GoogleOAuth : HTTPS OAuth 2.0\n(GoogleAuthController)
-Notifications --> SMTP : kirim email pengingat
 Frontend --> OSM : muat tile peta (Leaflet.js)
+AuthApp ..> Browser : pengguna mengetik\nkode TOTP 6 digit
 
-Scheduler --> Laravel : trigger\napp:send-itinerary-reminders\n(harian 08:00)
+Notifications --> MySQL : antre ke tabel jobs
+QueueWorker --> MySQL : ambil job, simpan\nnotifikasi database
+QueueWorker --> SMTP : kirim email\n(pengingat, peringatan keamanan)
 
-SW ..> Browser : cache halaman\n& aset untuk offline
+Scheduler --> Laravel : app:send-itinerary-reminders\n(harian 08:00)
+Scheduler --> Laravel : trusted-devices:prune\n(harian)
+
+SW ..> Browser : cache halaman\n& aset untuk offline\n(dihapus saat logout / hapus akun)
 Manifest ..> Browser : metadata install\n(ikon, nama, warna tema)
 
 @enduml

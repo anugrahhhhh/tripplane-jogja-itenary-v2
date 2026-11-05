@@ -1,0 +1,38 @@
+@startuml 02f-activity-2fa-setelah-berhasil
+title Activity Diagram - Verifikasi 2FA (3/3): Setelah Kode Benar
+
+skinparam activity {
+  BackgroundColor #FAF8F3
+  BorderColor #2F6B5A
+  ArrowColor #2F6B5A
+  DiamondBackgroundColor #E8D5DA
+}
+skinparam swimlane {
+  BorderColor #2F6B5A
+}
+
+|Sistem|
+start
+:Hapus status "menunggu kode 2FA";
+:Masukkan pengguna ke sistem;
+
+if (Pengguna memilih "Percayai perangkat ini"?) then (ya)
+  :Simpan perangkat tepercaya (30 hari);
+else (tidak)
+endif
+
+:Kirim notifikasi "Login baru"\n(email + aplikasi, dengan tombol "Bukan saya");
+
+if (Yang dipakai recovery code?) then (ya)
+  :Hapus recovery code yang terpakai;
+  :Kirim notifikasi\n"Recovery code dipakai, sisa N";
+else (tidak)
+endif
+
+:Arahkan ke halaman tujuan\n(Beranda / Dashboard Admin);
+
+|Pengguna|
+:Berhasil masuk;
+stop
+
+@enduml

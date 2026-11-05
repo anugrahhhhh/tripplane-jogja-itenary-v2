@@ -1,4 +1,4 @@
-<a href="{{ route('auth.google.redirect') }}" class="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-primary-100 py-3 text-sm font-semibold text-ink/70 hover:bg-primary-50 transition">
+<a href="{{ route('auth.google.redirect') }}" class="btn-secondary w-full py-3">
     <svg class="w-4 h-4" viewBox="0 0 24 24">
         <path fill="#4285F4" d="M23.52 12.27c0-.85-.08-1.67-.22-2.45H12v4.63h6.46c-.28 1.5-1.13 2.77-2.4 3.62v3.01h3.88c2.27-2.09 3.58-5.17 3.58-8.81z"/>
         <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.01c-1.08.72-2.45 1.15-4.05 1.15-3.11 0-5.75-2.1-6.69-4.93H1.3v3.11C3.26 21.3 7.3 24 12 24z"/>

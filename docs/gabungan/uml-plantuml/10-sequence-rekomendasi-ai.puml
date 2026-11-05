@@ -27,10 +27,12 @@ else belum
   Dest --> Service : Collection<Destination>
   Service -> Service : buildDestinationCatalog()\n(+ jarak Haversine jika lokasi ada)
   Service -> Service : buildPrompt()
-  Service -> Gemini : POST generateContent\n(responseSchema: recommendations[])
-  Gemini --> Service : 200 OK JSON
+  loop model utama, lalu model cadangan\n(pindah jika 404 / 429 / 503 / timeout)
+    Service -> Gemini : POST generateContent\n(responseSchema: recommendations[])
+    Gemini --> Service : 200 OK JSON / error
+  end
 
-  alt gagal setelah retry
+  alt semua model gagal
     Service --> Ctrl : throw RuntimeException
     Ctrl --> User : 302 kembali + error
   else sukses

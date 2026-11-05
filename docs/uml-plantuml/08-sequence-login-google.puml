@@ -1,5 +1,5 @@
 @startuml 08-sequence-login-google
-title Sequence Diagram - Masuk dengan Google (Socialite OAuth)
+title Sequence Diagram - Masuk dengan Google (Socialite OAuth + gerbang 2FA)
 
 skinparam sequence {
   ArrowColor #2F6B5A
@@ -16,12 +16,12 @@ participant "Socialite" as Socialite
 participant "Google OAuth" as Google
 participant "User (Model)" as UserModel
 database "MySQL\n(users)" as DB
-participant "Auth" as Auth
+participant "TwoFactorGate" as Gate
 
 Traveler -> Browser : klik "Lanjutkan dengan Google"
 Browser -> Ctrl : GET /auth/google/redirect
 Ctrl -> Socialite : driver('google')->redirect()
-Socialite --> Browser : 302 ke accounts.google.com\n(scope: openid profile email)
+Socialite --> Browser : 302 ke accounts.google.com
 Browser -> Google : tampilkan layar consent
 Traveler -> Google : login & setujui akses
 Google --> Browser : redirect /auth/google/callback?code=...
@@ -29,39 +29,43 @@ Google --> Browser : redirect /auth/google/callback?code=...
 Browser -> Ctrl : GET /auth/google/callback
 Ctrl -> Socialite : driver('google')->user()
 Socialite -> Google : tukar code -> access token
-Google --> Socialite : access token
 Socialite -> Google : ambil profil (id, nama, email, avatar)
-Google --> Socialite : data profil
-Socialite --> Ctrl : SocialiteUser
 
-Ctrl -> UserModel : where google_id = id
-UserModel -> DB : SELECT ...
-DB --> UserModel : baris user / kosong
+alt gagal (exception)
+  Socialite --> Ctrl : Throwable
+  Ctrl --> Browser : redirect /login\n+ error "Gagal masuk dengan Google"
+else berhasil
+  Google --> Socialite : data profil
+  Socialite --> Ctrl : SocialiteUser
 
-alt tidak ditemukan via google_id
-  Ctrl -> UserModel : where email = email
+  Ctrl -> UserModel : where google_id = id ->first()
   UserModel -> DB : SELECT ...
-  DB --> UserModel : baris user / kosong
-end
+  opt tidak ditemukan via google_id
+    Ctrl -> UserModel : where email = email ->first()
+    UserModel -> DB : SELECT ...
+  end
 
-alt user ditemukan
-  alt user->isAdmin()
+  alt user ditemukan & isAdmin()
     Ctrl --> Browser : redirect /login\n+ error "akun Admin"
-  else traveler biasa
-    alt google_id belum tertaut
+  else user ditemukan (traveler)
+    opt google_id belum tertaut
       Ctrl -> UserModel : forceFill(google_id)->save()
       UserModel -> DB : UPDATE users
     end
+    Ctrl -> Gate : pass(request, user, 'google', intended)
+    Gate --> Ctrl : redirect (setup 2FA / tujuan / challenge)
+    Ctrl --> Browser : redirect
+  else user tidak ditemukan
+    Ctrl -> UserModel : create(name, email, role=traveler,\ngoogle_id, avatar, password acak)
+    UserModel -> DB : INSERT INTO users
+    Ctrl -> UserModel : forceFill(email_verified_at=now())->save()
+    UserModel -> DB : UPDATE users
+    Ctrl -> Gate : pass(request, user, 'google', intended)
+    Gate --> Ctrl : redirect ke setup 2FA\n(akun baru belum punya 2FA)
+    Ctrl --> Browser : redirect
   end
-else user tidak ditemukan sama sekali
-  Ctrl -> UserModel : create(name, email, role=traveler,\ngoogle_id, avatar, password acak)
-  UserModel -> DB : INSERT INTO users
-  Ctrl -> UserModel : forceFill(email_verified_at=now())->save()
-  UserModel -> DB : UPDATE users
 end
 
-Ctrl -> Auth : login(user, remember=true)
-Ctrl --> Browser : redirect Beranda
-Browser --> Traveler : tampil sebagai Traveler login
+note over Gate : rincian keputusan gerbang 2FA\nada di Sequence Diagram 16
 
 @enduml

@@ -1,0 +1,33 @@
+@startuml 06a-activity-reminder-harian
+title Activity Diagram - Pengingat Itinerary H-1 (1/2): Pengecekan Harian
+
+skinparam activity {
+  BackgroundColor #FAF8F3
+  BorderColor #2F6B5A
+  ArrowColor #2F6B5A
+  DiamondBackgroundColor #E8D5DA
+}
+skinparam swimlane {
+  BorderColor #2F6B5A
+}
+
+|Sistem|
+start
+:Setiap hari pukul 08:00,\nmulai pengecekan pengingat;
+:Cari itinerary yang dimulai besok\ndan belum dikirimi pengingat;
+
+if (Ada itinerary yang ditemukan?) then (tidak)
+  :Selesai, tidak ada pengingat\nyang perlu dikirim;
+  stop
+endif
+
+while (Masih ada itinerary yang belum diproses?) is (ya)
+  :Tentukan penerima\n(pemilik dan semua kolaborator);
+  :Kirim pengingat ke setiap penerima\n(lihat diagram 06b);
+  :Tandai itinerary sudah dikirimi pengingat;
+endwhile (tidak)
+
+:Selesai;
+stop
+
+@enduml

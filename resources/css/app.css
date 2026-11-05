@@ -5,3 +5,170 @@
 [x-cloak] {
     display: none !important;
 }
+
+/* ---------------------------------------------------------------
+   Dasar tampilan JogjaTrip
+   --------------------------------------------------------------- */
+@layer base {
+    html {
+        scroll-behavior: smooth;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    h1, h2, h3, h4 {
+        @apply font-display tracking-tight;
+    }
+
+    ::selection {
+        @apply bg-primary-200 text-primary-900;
+    }
+
+    /* Semua field form tampil konsisten walau tidak memakai komponen. */
+    [type='text'], [type='email'], [type='url'], [type='password'], [type='number'],
+    [type='date'], [type='time'], [type='search'], [type='tel'], select, textarea {
+        @apply border-primary-100 bg-white text-ink placeholder:text-ink/40 transition;
+    }
+
+    [type='text']:focus, [type='email']:focus, [type='url']:focus, [type='password']:focus,
+    [type='number']:focus, [type='date']:focus, [type='time']:focus, [type='search']:focus,
+    [type='tel']:focus, select:focus, textarea:focus {
+        @apply border-primary-400 ring-4 ring-primary-500/10;
+    }
+
+    [type='checkbox'], [type='radio'] {
+        @apply border-primary-200 text-primary focus:ring-primary-300;
+    }
+}
+
+/* ---------------------------------------------------------------
+   Komponen yang dipakai berulang di halaman
+   --------------------------------------------------------------- */
+@layer components {
+    .card {
+        @apply bg-white rounded-2xl border border-primary-100/70 shadow-soft;
+    }
+
+    .card-hover {
+        @apply transition duration-200 hover:shadow-lift hover:-translate-y-0.5 hover:border-primary-200;
+    }
+
+    .btn {
+        @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition duration-150 focus:outline-none focus-visible:ring-4 disabled:opacity-50 disabled:cursor-not-allowed;
+    }
+
+    .btn-sm {
+        @apply px-3 py-1.5 text-xs rounded-lg;
+    }
+
+    .btn-lg {
+        @apply px-6 py-3.5 text-base;
+    }
+
+    .btn-primary {
+        @apply btn bg-primary text-white shadow-sm hover:bg-primary-600 hover:shadow-glow active:bg-primary-700 focus-visible:ring-primary-500/30;
+    }
+
+    .btn-accent {
+        @apply btn bg-accent-500 text-white shadow-sm hover:bg-accent-600 active:bg-accent-600 focus-visible:ring-accent-400/40;
+    }
+
+    .btn-secondary {
+        @apply btn bg-white text-ink/80 border border-primary-100 shadow-sm hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700 focus-visible:ring-primary-500/20;
+    }
+
+    .btn-ghost {
+        @apply btn text-ink/70 hover:bg-primary-50 hover:text-primary-700 focus-visible:ring-primary-500/20;
+    }
+
+    .btn-danger {
+        @apply btn bg-white text-red-600 border border-red-100 hover:bg-red-50 hover:border-red-200 focus-visible:ring-red-500/20;
+    }
+
+    .input {
+        @apply w-full rounded-xl border-primary-100 bg-white text-sm text-ink placeholder:text-ink/40 shadow-sm focus:border-primary-400 focus:ring-4 focus:ring-primary-500/10;
+    }
+
+    .label {
+        @apply block text-sm font-semibold text-ink/80;
+    }
+
+    .badge {
+        @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold;
+    }
+
+    .badge-primary { @apply badge bg-primary-50 text-primary-700 ring-1 ring-inset ring-primary-100; }
+    .badge-accent  { @apply badge bg-accent-100 text-accent-600 ring-1 ring-inset ring-accent-200; }
+    .badge-danger  { @apply badge bg-red-50 text-red-600 ring-1 ring-inset ring-red-100; }
+    .badge-warning { @apply badge bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200; }
+    .badge-muted   { @apply badge bg-ink/5 text-ink/60 ring-1 ring-inset ring-ink/10; }
+
+    .eyebrow {
+        @apply inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-accent-500;
+    }
+
+    .icon-tile {
+        @apply inline-flex shrink-0 items-center justify-center w-10 h-10 rounded-xl bg-primary-50 text-primary-600 ring-1 ring-inset ring-primary-100;
+    }
+
+    .section-title {
+        @apply text-2xl sm:text-3xl font-bold text-ink;
+    }
+
+    .link {
+        @apply font-semibold text-accent-500 hover:text-accent-600 underline-offset-4 hover:underline;
+    }
+
+    .empty-state {
+        @apply card flex flex-col items-center text-center px-6 py-14;
+    }
+
+    .table-modern {
+        @apply w-full text-sm;
+    }
+
+    .table-modern thead th {
+        @apply bg-primary-50/60 px-5 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-primary-700/80 whitespace-nowrap;
+    }
+
+    .table-modern tbody td {
+        @apply px-5 py-3.5 align-middle;
+    }
+
+    .table-modern tbody tr {
+        @apply border-t border-primary-50 transition hover:bg-cream/70;
+    }
+
+    .alert {
+        @apply flex items-start gap-3 rounded-xl border px-4 py-3 text-sm;
+    }
+
+    .alert-success { @apply alert bg-primary-50 border-primary-200 text-primary-800; }
+    .alert-error   { @apply alert bg-red-50 border-red-200 text-red-700; }
+    .alert-warning { @apply alert bg-amber-50 border-amber-200 text-amber-900; }
+
+    .pattern-dots {
+        background-image: radial-gradient(rgba(255, 255, 255, 0.14) 1px, transparent 1px);
+        background-size: 18px 18px;
+    }
+
+    .pattern-dots-dark {
+        background-image: radial-gradient(rgba(47, 107, 90, 0.10) 1px, transparent 1px);
+        background-size: 18px 18px;
+    }
+}
+
+@layer utilities {
+    .scrollbar-none {
+        scrollbar-width: none;
+    }
+
+    .scrollbar-none::-webkit-scrollbar {
+        display: none;
+    }
+}
+
+/* Leaflet: sudut peta ikut membulat */
+.leaflet-container {
+    font-family: inherit;
+    border-radius: inherit;
+}

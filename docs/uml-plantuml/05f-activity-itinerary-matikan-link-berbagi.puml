@@ -1,0 +1,32 @@
+@startuml 05f-activity-itinerary-matikan-link-berbagi
+title Activity Diagram - Mematikan Link Berbagi Itinerary
+
+skinparam activity {
+  BackgroundColor #FAF8F3
+  BorderColor #2F6B5A
+  ArrowColor #2F6B5A
+  DiamondBackgroundColor #E8D5DA
+}
+skinparam swimlane {
+  BorderColor #2F6B5A
+}
+
+|Pemilik Itinerary|
+start
+:Buka halaman Itinerary;
+:Klik "Matikan link";
+
+|Sistem|
+if (Yang meminta adalah\npemilik itinerary ini?) then (tidak)
+  :Tolak, akses tidak diizinkan;
+  stop
+endif
+
+:Hapus token dari itinerary;
+:Tampilkan pesan "Link berbagi dimatikan";
+
+|Pemilik Itinerary|
+:Link lama tidak bisa dibuka lagi;
+stop
+
+@enduml

@@ -44,6 +44,12 @@ return [
         // keluarga model berbeda dari model utama, jadi kemungkinan besar
         // kapasitas servernya terpisah saat model utama sedang padat.
         'fallback_models' => env('GEMINI_FALLBACK_MODELS', 'gemini-3.5-flash,gemini-3.1-flash-lite'),
+        // Batas waktu total (detik) untuk semua percobaan AI, termasuk model
+        // cadangan. Pengguna tidak akan menunggu lebih lama dari ini.
+        // Dijaga otomatis di rentang 10–150 detik (di bawah batas Nginx 180).
+        'time_budget' => (int) env('GEMINI_TIME_BUDGET', 50),
+        // Batas waktu satu percobaan ke satu model (detik).
+        'attempt_timeout' => (int) env('GEMINI_ATTEMPT_TIMEOUT', 20),
     ],
 
     'google' => [

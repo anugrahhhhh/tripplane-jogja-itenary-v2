@@ -15,6 +15,21 @@ export default {
         extend: {
             fontFamily: {
                 sans: ['Figtree', ...defaultTheme.fontFamily.sans],
+                display: ['"Plus Jakarta Sans"', 'Figtree', ...defaultTheme.fontFamily.sans],
+            },
+            boxShadow: {
+                soft: '0 1px 2px rgba(15, 36, 31, 0.04), 0 4px 16px -4px rgba(15, 36, 31, 0.06)',
+                lift: '0 2px 4px rgba(15, 36, 31, 0.04), 0 16px 40px -12px rgba(15, 36, 31, 0.18)',
+                glow: '0 8px 24px -6px rgba(47, 107, 90, 0.45)',
+            },
+            keyframes: {
+                'fade-up': {
+                    '0%': { opacity: '0', transform: 'translateY(8px)' },
+                    '100%': { opacity: '1', transform: 'translateY(0)' },
+                },
+            },
+            animation: {
+                'fade-up': 'fade-up .5s ease-out both',
             },
             colors: {
                 // Palet warna resmi JogjaTrip — pakai kelas ini di semua halaman

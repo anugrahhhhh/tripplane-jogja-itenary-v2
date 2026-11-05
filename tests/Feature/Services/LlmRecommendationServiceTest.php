@@ -45,7 +45,7 @@ class LlmRecommendationServiceTest extends TestCase
             ], 200),
         ]);
 
-        $result = (new LlmRecommendationService())->recommend(['interests' => ['Kuliner']]);
+        $result = (new LlmRecommendationService)->recommend(['interests' => ['Kuliner']]);
 
         $this->assertCount(1, $result);
         $this->assertTrue($result[0]['destination']->is($destination));
@@ -66,7 +66,7 @@ class LlmRecommendationServiceTest extends TestCase
             ], 200),
         ]);
 
-        $result = (new LlmRecommendationService())->recommend([]);
+        $result = (new LlmRecommendationService)->recommend([]);
 
         $this->assertSame([], $result);
     }
@@ -78,7 +78,7 @@ class LlmRecommendationServiceTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('GEMINI_API_KEY belum diatur');
 
-        (new LlmRecommendationService())->recommend([]);
+        (new LlmRecommendationService)->recommend([]);
     }
 
     public function test_it_throws_a_friendly_error_when_gemini_keeps_failing(): void
@@ -90,7 +90,7 @@ class LlmRecommendationServiceTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Server AI sedang sangat sibuk');
 
-        (new LlmRecommendationService())->recommend([]);
+        (new LlmRecommendationService)->recommend([]);
     }
 
     public function test_it_falls_back_to_a_secondary_model_when_the_primary_keeps_failing(): void
@@ -110,7 +110,7 @@ class LlmRecommendationServiceTest extends TestCase
             ], 200),
         ]);
 
-        $result = (new LlmRecommendationService())->recommend([]);
+        $result = (new LlmRecommendationService)->recommend([]);
 
         $this->assertCount(1, $result);
         $this->assertSame('Berhasil lewat model cadangan.', $result[0]['reason']);
@@ -135,7 +135,7 @@ class LlmRecommendationServiceTest extends TestCase
             ], 200),
         ]);
 
-        $result = (new LlmRecommendationService())->recommend([]);
+        $result = (new LlmRecommendationService)->recommend([]);
 
         $this->assertCount(1, $result);
         $this->assertSame('Model utama sudah dihentikan Google.', $result[0]['reason']);
@@ -160,7 +160,7 @@ class LlmRecommendationServiceTest extends TestCase
             ], 200),
         ]);
 
-        $result = (new LlmRecommendationService())->recommend([]);
+        $result = (new LlmRecommendationService)->recommend([]);
 
         $this->assertCount(1, $result);
         $this->assertSame('Berhasil walau model utama timeout.', $result[0]['reason']);
@@ -177,7 +177,7 @@ class LlmRecommendationServiceTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Server AI sedang sangat sibuk');
 
-        (new LlmRecommendationService())->recommend([]);
+        (new LlmRecommendationService)->recommend([]);
     }
 
     public function test_it_does_not_try_fallback_models_on_a_non_capacity_error(): void
@@ -193,7 +193,7 @@ class LlmRecommendationServiceTest extends TestCase
 
         $this->expectException(RuntimeException::class);
 
-        (new LlmRecommendationService())->recommend([]);
+        (new LlmRecommendationService)->recommend([]);
     }
 
     public function test_it_recovers_after_a_transient_failure_via_retry(): void
@@ -214,7 +214,7 @@ class LlmRecommendationServiceTest extends TestCase
                 ], 200),
         ]);
 
-        $result = (new LlmRecommendationService())->recommend([]);
+        $result = (new LlmRecommendationService)->recommend([]);
 
         $this->assertCount(1, $result);
         $this->assertSame('Berhasil setelah retry.', $result[0]['reason']);

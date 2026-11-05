@@ -1,6 +1,6 @@
 <section class="space-y-6">
     <header>
-        <h2 class="text-lg font-semibold text-red-700">
+        <h2 class="text-lg font-bold text-red-700">
             Hapus Akun
         </h2>
 
@@ -19,7 +19,7 @@
             @csrf
             @method('delete')
 
-            <h2 class="text-lg font-semibold text-ink">
+            <h2 class="text-lg font-bold text-ink">
                 Yakin ingin menghapus akun?
             </h2>
 

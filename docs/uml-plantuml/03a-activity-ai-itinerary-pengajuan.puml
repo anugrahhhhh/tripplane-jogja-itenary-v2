@@ -1,0 +1,48 @@
+@startuml 03a-activity-ai-itinerary-pengajuan
+title Activity Diagram - Susun Itinerary dengan AI (1/2): Pengajuan Preferensi
+
+skinparam activity {
+  BackgroundColor #FAF8F3
+  BorderColor #2F6B5A
+  ArrowColor #2F6B5A
+  DiamondBackgroundColor #E8D5DA
+}
+skinparam swimlane {
+  BorderColor #2F6B5A
+}
+
+|Traveler|
+start
+:Buka halaman "Susun Itinerary dengan AI";
+:Isi preferensi\n(judul, tanggal, minat, budget per hari,\nlokasi awal, catatan);
+:Kirim form;
+
+|Sistem|
+if (Terlalu sering mencoba\n(maks. 3 kali dalam 2 menit)?) then (ya)
+  :Tampilkan pesan\n"Terlalu banyak percobaan, coba lagi nanti";
+  |Traveler|
+  :Membaca pesan, form tetap terisi;
+  stop
+endif
+|Sistem|
+
+if (Data yang diisi sudah benar?) then (tidak)
+  :Tampilkan pesan kesalahan\npada isian yang bermasalah;
+  |Traveler|
+  :Memperbaiki isian;
+  stop
+endif
+|Sistem|
+
+if (Liburan lebih dari 7 hari?) then (ya)
+  :Tampilkan pesan\n"Maksimal 7 hari";
+  |Traveler|
+  :Mengubah tanggal;
+  stop
+endif
+|Sistem|
+
+:Lanjut ke penyusunan itinerary oleh AI\n(lihat diagram 03b);
+stop
+
+@enduml

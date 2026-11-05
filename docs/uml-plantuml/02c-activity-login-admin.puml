@@ -1,0 +1,43 @@
+@startuml 02c-activity-login-admin
+title Activity Diagram - Masuk sebagai Admin
+
+skinparam activity {
+  BackgroundColor #FAF8F3
+  BorderColor #2F6B5A
+  ArrowColor #2F6B5A
+  DiamondBackgroundColor #E8D5DA
+}
+skinparam swimlane {
+  BorderColor #2F6B5A
+}
+
+|Admin|
+start
+:Buka halaman Masuk Admin;
+:Isi email dan password;
+:Klik "Masuk";
+
+|Sistem|
+if (Terlalu sering gagal\n(maks. 5 kali)?) then (ya)
+  :Tampilkan pesan\n"Terlalu banyak percobaan,\ncoba lagi dalam N detik";
+  stop
+endif
+
+if (Email dan password benar?) then (tidak)
+  :Catat percobaan gagal;
+  :Tampilkan pesan\n"Email atau password salah";
+  stop
+endif
+
+if (Akun ini akun Admin?) then (tidak)
+  :Tampilkan pesan\n"Akun ini bukan akun Admin";
+  stop
+endif
+
+:Lanjut ke pemeriksaan 2FA\n(lihat diagram 02d);
+
+|Admin|
+:Masuk ke Dashboard Admin\n(setelah lolos 2FA);
+stop
+
+@enduml

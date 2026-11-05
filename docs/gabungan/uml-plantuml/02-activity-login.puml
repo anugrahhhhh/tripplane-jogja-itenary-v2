@@ -1,5 +1,5 @@
 @startuml 02-activity-login
-title Activity Diagram - Masuk (Traveler, Google, dan Admin terpisah)
+title Activity Diagram - Masuk (Traveler, Google, Admin) + 2FA Wajib
 
 skinparam activity {
   BackgroundColor #FAF8F3
@@ -11,71 +11,99 @@ skinparam activity {
 start
 :Buka halaman /login\natau /admin/login;
 
-if (Pintu masuk mana?) then (/admin/login)
-  :Isi email & password Admin;
-  :AuthenticatedSessionController(Admin)::store();
-  if (Kredensial valid?) then (tidak)
-    :Tampilkan error "email/password salah";
-    stop
-  else (ya)
-  endif
-  if (user.role == admin?) then (tidak)
-    :Logout paksa sesi;
-    :Tampilkan error\n"Akun ini bukan akun Admin";
-    stop
-  else (ya)
-    :Regenerasi session;
-    :Redirect ke /admin (Dashboard);
-    stop
-  endif
-
-else (/login)
+partition "Kredensial utama" {
   if (Metode masuk?) then (Email & Password)
     :Isi email & password;
-    :AuthenticatedSessionController::store();
+    :LoginRequest::validatedUser();
+    if (Rate limit terlampaui?\n(maks 5x per email+IP)) then (ya)
+      :Error "Terlalu banyak percobaan,\ncoba lagi dalam N detik";
+      stop
+    else (tidak)
+    endif
     if (Kredensial valid?) then (tidak)
-      :Tampilkan error "email/password salah";
+      :RateLimiter::hit();
+      :Error "email/password salah";
+      stop
+    else (ya)
+      :RateLimiter::clear();
+    endif
+    if (Pintu masuk cocok dengan role?\n(/login = traveler, /admin/login = admin)) then (tidak)
+      :Error "Akun Admin masuk lewat halaman Admin"\natau "Akun ini bukan akun Admin";
+      note right : belum ada sesi login,\njadi tidak perlu logout
       stop
     else (ya)
     endif
-    if (user.role == admin?) then (ya)
-      :Logout paksa sesi;
-      :Tampilkan error\n"Akun ini adalah akun Admin,\nmasuk lewat halaman Admin";
-      stop
-    else (tidak)
-      :Regenerasi session;
-      :Redirect ke Beranda;
-      stop
-    endif
 
-  else (Google)
+  else (Google, hanya /login)
     :Klik "Lanjutkan dengan Google";
     :GoogleAuthController::redirect();
-    partition "Google OAuth" {
-      :Tampilkan layar consent Google;
-      :Pengguna login & setujui akses;
-      :Redirect kembali ke\n/auth/google/callback?code=...;
-    }
+    :Pengguna setujui akses di layar consent Google;
     :GoogleAuthController::callback();
-    :Ambil profil (id, nama, email, avatar)\nlewat Socialite;
+    if (Profil Google berhasil diambil?) then (tidak)
+      :Error "Gagal masuk dengan Google";
+      stop
+    else (ya)
+    endif
     if (User ditemukan\nvia google_id atau email?) then (ya)
       if (user.role == admin?) then (ya)
-        :Tampilkan error\n"Akun ini adalah akun Admin";
-        :Redirect ke /login;
+        :Error "Akun ini adalah akun Admin";
         stop
       else (tidak)
-        if (google_id belum tertaut?) then (ya)
-          :Tautkan google_id ke akun;
-        else (tidak)
-        endif
+        :Tautkan google_id jika belum;
       endif
     else (tidak)
       :Buat akun baru\n(role=traveler, email_verified_at=now);
     endif
-    :Auth::login(user);
-    :Redirect ke Beranda;
-    stop
   endif
-endif
+}
+
+partition "TwoFactorGate::pass()" {
+  if (2FA sudah aktif?) then (belum)
+    :Auth::login(user);
+    :Redirect ke /dua-faktor/aktifkan;
+    partition "Aktifkan 2FA (wajib)" {
+      :Buat secret, tampilkan QR code;
+      repeat
+        :Pengguna pindai QR\n& isi kode 6 digit;
+      repeat while (Kode valid?) is (tidak)
+      -> ya;
+      :Buat 8 recovery code;
+      :Simpan secret + recovery code (terenkripsi),\nset two_factor_confirmed_at;
+      :Kirim TwoFactorEnabledNotification;
+      :Tampilkan recovery code (sekali);
+      :Pengguna konfirmasi sudah menyimpan;
+    }
+  elseif (Perangkat tepercaya?\n(cookie trusted_device valid)) then (ya)
+    :Auth::login(user);
+  else (tidak)
+    :Simpan two_factor.pending di sesi\n(berlaku 5 menit);
+    :Redirect ke /dua-faktor;
+    partition "Verifikasi kode" {
+      repeat
+        :Isi kode authenticator\natau recovery code;
+        if (Pending kedaluwarsa?) then (ya)
+          :Error "Waktu habis, silakan masuk lagi";
+          stop
+        else (tidak)
+        endif
+      repeat while (Kode salah / rate limit\n(maks 5x per menit)?) is (ya)
+      -> kode benar;
+      :Auth::login(user), regenerasi session;
+      if (Centang "Percayai perangkat ini"?) then (ya)
+        :Simpan TrustedDevice (30 hari)\n+ set cookie;
+      else (tidak)
+      endif
+      :Kirim NewLoginNotification\n(tombol "Bukan saya");
+      if (Memakai recovery code?) then (ya)
+        :Hapus kode terpakai;
+        :Kirim RecoveryCodeUsedNotification;
+      else (tidak)
+      endif
+    }
+  endif
+}
+
+:Redirect ke tujuan\n(Beranda / Dashboard Admin);
+stop
 
 @enduml

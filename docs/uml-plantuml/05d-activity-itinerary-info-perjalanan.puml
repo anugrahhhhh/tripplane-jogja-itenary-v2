@@ -1,0 +1,33 @@
+@startuml 05d-activity-itinerary-info-perjalanan
+title Activity Diagram - Itinerary Harian (2/2): Jarak, Peta, Cuaca & Estimasi Biaya
+
+skinparam activity {
+  BackgroundColor #FAF8F3
+  BorderColor #2F6B5A
+  ArrowColor #2F6B5A
+  DiamondBackgroundColor #E8D5DA
+}
+skinparam swimlane {
+  BorderColor #2F6B5A
+}
+
+|Sistem|
+start
+:Hitung jarak dan perkiraan waktu tempuh\nantar destinasi yang berurutan;
+:Tampilkan peta rute perjalanan;
+
+if (Data prakiraan cuaca tersedia?) then (ya)
+  :Tampilkan prakiraan cuaca hari itu;
+else (tidak)
+  :Lewati tampilan cuaca;
+endif
+
+:Hitung estimasi biaya tiket\n(per hari dan per orang);
+:Kalikan dengan jumlah traveler\n(total rombongan);
+:Tampilkan estimasi biaya;
+
+|Traveler|
+:Melihat jarak, peta, cuaca,\ndan estimasi biaya;
+stop
+
+@enduml

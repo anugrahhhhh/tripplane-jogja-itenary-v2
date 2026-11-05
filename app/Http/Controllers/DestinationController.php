@@ -5,12 +5,15 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Models\Destination;
 use App\Services\DistanceService;
+use App\Support\CatalogCache;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\View\View;
 
 class DestinationController extends Controller
 {
+    private const REVIEWS_PER_PAGE = 10;
+
     /**
      * Katalog utama. Tanpa pencarian/filter: tampilkan destinasi
      * dikelompokkan per kategori (mode "jelajahi"). Begitu ada pencarian
@@ -21,20 +24,25 @@ class DestinationController extends Controller
         $isSearching = $request->filled('q') || $request->filled('kategori') || $request->filled('urutkan');
 
         if (! $isSearching) {
-            $categories = Category::withCount('destinations')->orderBy('name')->get();
+            $categories = CatalogCache::remember(CatalogCache::BROWSE, function () {
+                $categories = Category::withCount('destinations')->orderBy('name')->get();
 
-            // Diisi manual per kategori (bukan eager-load dengan limit) karena
-            // MySQL tidak bisa memakai alias withAvg() di dalam window function
-            // yang dibuat Laravel untuk eager-load ber-limit per relasi.
-            foreach ($categories as $category) {
-                $category->setRelation('destinations', Destination::where('category_id', $category->id)
-                    ->where('is_active', true)
-                    ->withCount(['visibleReviews as reviews_count'])
-                    ->withAvg('visibleReviews as reviews_avg_rating', 'rating')
-                    ->orderByDesc('reviews_avg_rating')
-                    ->limit(4)
-                    ->get());
-            }
+                // Diisi manual per kategori (bukan eager-load dengan limit) karena
+                // MySQL tidak bisa memakai alias withAvg() di dalam window function
+                // yang dibuat Laravel untuk eager-load ber-limit per relasi.
+                foreach ($categories as $category) {
+                    $category->setRelation('destinations', Destination::where('category_id', $category->id)
+                        ->where('is_active', true)
+                        ->with('category')
+                        ->withCount(['visibleReviews as reviews_count'])
+                        ->withAvg('visibleReviews as reviews_avg_rating', 'rating')
+                        ->orderByDesc('reviews_avg_rating')
+                        ->limit(4)
+                        ->get());
+                }
+
+                return $categories;
+            });
 
             return view('destinations.index', [
                 'mode' => 'browse',
@@ -72,11 +80,16 @@ class DestinationController extends Controller
     {
         abort_unless($destination->is_active, 404);
 
-        $destination->load([
-            'category',
-            'photos',
-            'visibleReviews' => fn ($query) => $query->with('user')->latest(),
-        ]);
+        $destination->load(['category', 'photos']);
+
+        // Ulasan dipaginasi (10 per halaman, parameter ?ulasan=) supaya
+        // halaman tetap ringan walau ulasannya ratusan.
+        $reviews = $destination->visibleReviews()
+            ->with('user')
+            ->latest()
+            ->paginate(self::REVIEWS_PER_PAGE, ['*'], 'ulasan')
+            ->withQueryString()
+            ->fragment('ulasan');
 
         $userItineraries = auth()->check()
             ? auth()->user()->itineraries()->orderByDesc('start_date')->get()
@@ -93,6 +106,7 @@ class DestinationController extends Controller
 
         return view('destinations.show', [
             'destination' => $destination,
+            'reviews' => $reviews,
             'isFavorited' => $destination->isFavoritedBy(auth()->user()),
             'userItineraries' => $userItineraries,
             'related' => $related,
@@ -152,7 +166,10 @@ class DestinationController extends Controller
 
         return [
             'destinations' => $destinations,
-            'categories' => Category::withCount('destinations')->orderBy('name')->get(),
+            'categories' => CatalogCache::remember(
+                CatalogCache::CATEGORIES,
+                fn () => Category::withCount('destinations')->orderBy('name')->get()
+            ),
             'sort' => $sort,
         ];
     }

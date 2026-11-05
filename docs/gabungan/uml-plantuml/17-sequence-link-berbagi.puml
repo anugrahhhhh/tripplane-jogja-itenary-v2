@@ -1,0 +1,60 @@
+@startuml 17-sequence-link-berbagi
+title Sequence Diagram - Link Berbagi Itinerary (Read-only Publik)
+
+skinparam sequence {
+  ArrowColor #2F6B5A
+  LifeLineBorderColor #2F6B5A
+  ParticipantBorderColor #2F6B5A
+  ParticipantBackgroundColor #FAF8F3
+  ActorBackgroundColor #E8D5DA
+}
+
+actor "Pemilik Itinerary" as Owner
+actor "Pengunjung\n(tanpa login)" as Visitor
+participant "ItineraryShareController" as ShareCtrl
+participant "SharedItineraryController" as SharedCtrl
+participant "Itinerary (Model)" as Itin
+participant "ItineraryInsights" as Insights
+participant "ItineraryCostEstimator" as Cost
+database "MySQL\n(itineraries, itinerary_items,\ndestinations)" as DB
+
+== Pemilik membuat / membuat ulang link ==
+Owner -> ShareCtrl : POST /itinerary/{id}/bagikan
+ShareCtrl -> Itin : isOwnedBy(auth()->user())
+alt bukan pemilik
+  ShareCtrl --> Owner : 403 Forbidden
+else pemilik
+  ShareCtrl -> Itin : forceFill(share_token = Str::random(40))->save()
+  Itin -> DB : UPDATE itineraries SET share_token
+  note right : token lama otomatis tidak berlaku
+  ShareCtrl --> Owner : redirect halaman Itinerary\n+ "Link berbagi dibuat"
+end
+
+== Pemilik mematikan link ==
+Owner -> ShareCtrl : DELETE /itinerary/{id}/bagikan
+ShareCtrl -> Itin : isOwnedBy(auth()->user())
+ShareCtrl -> Itin : forceFill(share_token = null)->save()
+Itin -> DB : UPDATE itineraries SET share_token = NULL
+ShareCtrl --> Owner : redirect + "Link berbagi dimatikan"
+
+== Pengunjung membuka link ==
+Visitor -> SharedCtrl : GET /bagikan/{token}\n(throttle 60 per menit)
+SharedCtrl -> SharedCtrl : cek format token\n(40 huruf/angka)
+alt format salah
+  SharedCtrl --> Visitor : 404
+else format benar
+  SharedCtrl -> Itin : where(share_token)->firstOrFail()
+  Itin -> DB : SELECT ... WHERE share_token = ?
+  alt tidak ditemukan
+    SharedCtrl --> Visitor : 404
+  else ditemukan
+    SharedCtrl -> Itin : load('items.destination')
+    SharedCtrl -> Insights : build(itinerary)
+    Insights --> SharedCtrl : titik peta, peringatan jadwal,\njarak & waktu tempuh per hari
+    SharedCtrl -> Cost : estimate(itinerary)
+    Cost --> SharedCtrl : biaya per hari, total per orang,\ntotal rombongan
+    SharedCtrl --> Visitor : 200 halaman read-only\n(tanpa pemilik, kolaborator, catatan)\nheader X-Robots-Tag: noindex, nofollow
+  end
+end
+
+@enduml

@@ -1,0 +1,33 @@
+@startuml 05e-activity-itinerary-buat-link-berbagi
+title Activity Diagram - Membuat / Membuat Ulang Link Berbagi Itinerary
+
+skinparam activity {
+  BackgroundColor #FAF8F3
+  BorderColor #2F6B5A
+  ArrowColor #2F6B5A
+  DiamondBackgroundColor #E8D5DA
+}
+skinparam swimlane {
+  BorderColor #2F6B5A
+}
+
+|Pemilik Itinerary|
+start
+:Buka halaman Itinerary;
+:Klik "Buat link" atau "Buat link baru";
+
+|Sistem|
+if (Yang meminta adalah\npemilik itinerary ini?) then (tidak)
+  :Tolak, akses tidak diizinkan;
+  stop
+endif
+
+:Buat token acak baru (40 karakter);
+:Simpan token ke itinerary\n(link lama otomatis tidak berlaku);
+:Tampilkan pesan "Link berbagi dibuat"\nbeserta link /bagikan/{token};
+
+|Pemilik Itinerary|
+:Salin link dan bagikan ke orang lain;
+stop
+
+@enduml

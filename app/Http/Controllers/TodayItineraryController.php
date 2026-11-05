@@ -6,6 +6,7 @@ use App\Models\Destination;
 use App\Services\DistanceService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class TodayItineraryController extends Controller
 {
@@ -26,12 +27,14 @@ class TodayItineraryController extends Controller
 
         $today = today();
 
-        $itinerary = auth()->user()->itineraries()->firstOrCreate(
-            ['type' => 'today', 'start_date' => $today, 'end_date' => $today],
-            ['title' => 'Itinerary Hari Ini - '.$today->translatedFormat('d F Y')]
-        );
+        // Destinasi yang sudah dinonaktifkan admin tidak boleh ikut ditambahkan.
+        $destinations = Destination::whereIn('id', $data['destination_ids'])
+            ->where('is_active', true)
+            ->get();
 
-        $destinations = Destination::whereIn('id', $data['destination_ids'])->get();
+        if ($destinations->isEmpty()) {
+            return back()->withErrors(['destination_ids' => 'Destinasi yang dipilih sudah tidak tersedia.']);
+        }
 
         if (! empty($data['lat']) && ! empty($data['lng'])) {
             $lat = (float) $data['lat'];
@@ -49,30 +52,43 @@ class TodayItineraryController extends Controller
                 ->values();
         }
 
-        $startOrder = $itinerary->items()->max('sort_order');
-        $startOrder = is_null($startOrder) ? 0 : $startOrder + 1;
+        // Satu transaksi: itinerary dan semua destinasinya tersimpan utuh,
+        // atau tidak sama sekali kalau ada error di tengah jalan.
+        $itinerary = DB::transaction(function () use ($destinations, $today) {
+            $itinerary = auth()->user()->itineraries()->firstOrCreate(
+                ['type' => 'today', 'start_date' => $today, 'end_date' => $today],
+                ['title' => 'Itinerary Hari Ini - '.$today->translatedFormat('d F Y')]
+            );
 
-        $newIndex = 0;
-        $cursor = now();
+            // Satu query untuk semua destinasi yang sudah ada (bukan satu per destinasi).
+            $existingIds = $itinerary->items()->pluck('destination_id')->map(fn ($id) => (int) $id)->flip();
 
-        foreach ($destinations as $destination) {
-            $alreadyAdded = $itinerary->items()->where('destination_id', $destination->id)->exists();
+            $startOrder = $itinerary->items()->max('sort_order');
+            $startOrder = is_null($startOrder) ? 0 : $startOrder + 1;
 
-            if ($alreadyAdded) {
-                continue;
+            $newIndex = 0;
+            $cursor = now();
+
+            foreach ($destinations as $destination) {
+                if ($existingIds->has((int) $destination->id)) {
+                    continue;
+                }
+
+                $itinerary->items()->create([
+                    'destination_id' => $destination->id,
+                    'day_number' => 1,
+                    'start_time' => $cursor->format('H:i'),
+                    'duration_minutes' => 60,
+                    'sort_order' => $startOrder + $newIndex,
+                ]);
+
+                $existingIds->put((int) $destination->id, true);
+                $cursor = $cursor->copy()->addMinutes(90);
+                $newIndex++;
             }
 
-            $itinerary->items()->create([
-                'destination_id' => $destination->id,
-                'day_number' => 1,
-                'start_time' => $cursor->format('H:i'),
-                'duration_minutes' => 60,
-                'sort_order' => $startOrder + $newIndex,
-            ]);
-
-            $cursor = $cursor->copy()->addMinutes(90);
-            $newIndex++;
-        }
+            return $itinerary;
+        });
 
         return redirect()->route('itineraries.show', $itinerary)
             ->with('status', 'Itinerary Hari Ini berhasil dibuat, destinasi diurutkan berdasarkan jarak dari lokasimu.');

@@ -1,0 +1,42 @@
+@startuml 05a-activity-itinerary-tambah-destinasi
+title Activity Diagram - Menambah Destinasi ke Itinerary
+
+skinparam activity {
+  BackgroundColor #FAF8F3
+  BorderColor #2F6B5A
+  ArrowColor #2F6B5A
+  DiamondBackgroundColor #E8D5DA
+}
+skinparam swimlane {
+  BorderColor #2F6B5A
+}
+
+|Traveler|
+start
+:Buka halaman Itinerary\ndan pilih hari yang diinginkan;
+:Klik "Tambah Destinasi";
+:Pilih destinasi\n(dari favorit atau semua destinasi);
+:Isi jam mulai, durasi, dan catatan;
+:Kirim form;
+
+|Sistem|
+if (Traveler adalah pemilik\natau kolaborator?) then (tidak)
+  :Tolak, akses tidak diizinkan;
+  stop
+endif
+
+if (Data yang diisi sudah benar?) then (tidak)
+  :Tampilkan pesan kesalahan;
+  |Traveler|
+  :Memperbaiki isian;
+  stop
+endif
+|Sistem|
+
+:Tambahkan destinasi di urutan terakhir\npada hari tersebut;
+
+|Traveler|
+:Melihat destinasi baru di itinerary;
+stop
+
+@enduml

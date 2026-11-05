@@ -17,6 +17,7 @@ actor "Scheduler\n(Cron)" as scheduler <<system>>
 actor "Google OAuth" as google <<external>>
 actor "Gemini AI" as gemini <<external>>
 actor "Open-Meteo" as meteo <<external>>
+actor "OpenStreetMap" as osm <<external>>
 
 traveler --|> guest
 admin --|> guest
@@ -29,6 +30,7 @@ rectangle "JogjaTrip" {
     usecase "Lihat Detail Destinasi" as UC_Detail
     usecase "Lihat Destinasi Terdekat\n(geolokasi)" as UC_Nearby
     usecase "Lihat Rekomendasi AI\n(personalisasi)" as UC_AiReco
+    usecase "Lihat Itinerary yang Dibagikan\n(link publik, read-only)" as UC_ViewShared
   }
 
   package "Akun" {
@@ -36,8 +38,18 @@ rectangle "JogjaTrip" {
     usecase "Masuk (Traveler)" as UC_Login
     usecase "Masuk dengan Google" as UC_LoginGoogle
     usecase "Masuk sebagai Admin" as UC_LoginAdmin
-    usecase "Kelola Profil" as UC_Profile
+    usecase "Lupa / Reset Password" as UC_ResetPassword
+    usecase "Kelola Profil\n(ubah data & password)" as UC_Profile
+    usecase "Hapus Akun" as UC_DeleteAccount
     usecase "Keluar" as UC_Logout
+  }
+
+  package "Keamanan Akun (2FA)" {
+    usecase "Aktifkan 2FA\n(wajib, aplikasi authenticator)" as UC_Setup2fa
+    usecase "Verifikasi Kode 2FA\n(atau recovery code)" as UC_Verify2fa
+    usecase "Kelola Recovery Code\n(buat ulang)" as UC_RecoveryCodes
+    usecase "Kelola Perangkat Tepercaya\n(hapus satu / semua)" as UC_TrustedDevices
+    usecase "Amankan Akun\n(tombol Bukan saya)" as UC_NotMe
   }
 
   package "Interaksi Sosial" {
@@ -46,72 +58,97 @@ rectangle "JogjaTrip" {
   }
 
   package "Itinerary" {
-    usecase "Buat Itinerary Manual" as UC_ItineraryCreate
+    usecase "Buat Itinerary Manual\n(+ jumlah traveler)" as UC_ItineraryCreate
     usecase "Susun Itinerary dengan AI" as UC_ItineraryAi
     usecase "Buat Itinerary Hari Ini\n(dari destinasi terdekat)" as UC_TodayItinerary
-    usecase "Kelola Item Itinerary\n(tambah/ubah/hapus)" as UC_ItineraryItem
+    usecase "Ubah / Hapus Itinerary" as UC_ItineraryEdit
+    usecase "Lihat Detail Itinerary" as UC_ItineraryShow
+    usecase "Kelola Item Itinerary\n(tambah/ubah/hapus/urutkan)" as UC_ItineraryItem
     usecase "Urutkan Otomatis\n(nearest neighbor)" as UC_AutoSort
-    usecase "Lihat Peringatan Jadwal\n(bentrok / di luar jam buka)" as UC_ScheduleWarning
-    usecase "Lihat Prakiraan Cuaca\nItinerary" as UC_Weather
-    usecase "Lihat Peta Rute" as UC_RouteMap
+    usecase "Lihat Peringatan Jadwal\n(bentrok / di luar jam buka /\nhari tutup)" as UC_ScheduleWarning
+    usecase "Lihat Estimasi Biaya Tiket\n(per hari & rombongan)" as UC_Cost
+    usecase "Lihat Prakiraan Cuaca" as UC_Weather
+    usecase "Lihat Peta Rute\n(+ jarak & waktu tempuh)" as UC_RouteMap
     usecase "Unduh PDF Itinerary" as UC_Pdf
     usecase "Undang Kolaborator" as UC_InviteCollab
     usecase "Keluarkan / Keluar\ndari Kolaborasi" as UC_RemoveCollab
+    usecase "Kelola Link Berbagi\n(buat / buat ulang / matikan)" as UC_Share
   }
 
   package "Notifikasi" {
-    usecase "Lihat Notifikasi" as UC_Notification
+    usecase "Lihat Notifikasi\n(tandai dibaca)" as UC_Notification
     usecase "Terima Pengingat H-1\nItinerary" as UC_ReminderReceive
+    usecase "Terima Peringatan Keamanan\n(login baru, 2FA aktif/di-reset,\nrecovery code dipakai)" as UC_SecurityAlert
   }
 
   package "Administrasi (Admin)" {
     usecase "Kelola Kategori" as UC_AdminCategory
-    usecase "Kelola Destinasi\n(+ upload foto)" as UC_AdminDestination
+    usecase "Kelola Destinasi\n(+ foto, hari tutup)" as UC_AdminDestination
     usecase "Moderasi Ulasan" as UC_AdminReview
     usecase "Lihat Data Pengguna" as UC_AdminUser
+    usecase "Reset 2FA Pengguna" as UC_AdminReset2fa
     usecase "Lihat Dashboard Analitik" as UC_AdminDashboard
   }
 
   package "Otomatis (Sistem)" {
-    usecase "Kirim Pengingat Itinerary\n(H-1, terjadwal)" as UC_SendReminder
+    usecase "Kirim Pengingat Itinerary\n(H-1, setiap 08:00)" as UC_SendReminder
+    usecase "Hapus Perangkat Tepercaya\nKedaluwarsa (harian)" as UC_PruneDevices
   }
 }
 
+' ===== Guest =====
 guest --> UC_Home
 guest --> UC_Search
 guest --> UC_Detail
 guest --> UC_Nearby
 guest --> UC_AiReco
+guest --> UC_ViewShared
 guest --> UC_Register
 guest --> UC_Login
 guest --> UC_LoginGoogle
 guest --> UC_LoginAdmin
+guest --> UC_ResetPassword
+guest --> UC_NotMe
 
-UC_Login ..> UC_LoginAdmin : <<exclude>>
-UC_LoginGoogle ..> UC_LoginAdmin : <<exclude>>
+' ===== Login selalu lewat 2FA =====
+UC_Login ..> UC_Verify2fa : <<include>>
+UC_LoginGoogle ..> UC_Verify2fa : <<include>>
+UC_LoginAdmin ..> UC_Verify2fa : <<include>>
+UC_Setup2fa ..> UC_Verify2fa : <<extend>>\n(belum aktif)
+UC_Verify2fa ..> UC_SecurityAlert : <<include>>
 
+' ===== Traveler =====
 traveler --> UC_Favorite
 traveler --> UC_Review
 traveler --> UC_ItineraryCreate
 traveler --> UC_ItineraryAi
 traveler --> UC_TodayItinerary
+traveler --> UC_ItineraryEdit
+traveler --> UC_ItineraryShow
 traveler --> UC_ItineraryItem
 traveler --> UC_Pdf
 traveler --> UC_InviteCollab
 traveler --> UC_RemoveCollab
+traveler --> UC_Share
 traveler --> UC_Notification
 traveler --> UC_Profile
+traveler --> UC_DeleteAccount
 traveler --> UC_Logout
+traveler --> UC_RecoveryCodes
+traveler --> UC_TrustedDevices
+traveler --> UC_ReminderReceive
 
-UC_ItineraryAi ..> UC_ItineraryCreate : <<extend>>
-UC_ItineraryItem ..> UC_AutoSort : <<extend>>
-UC_ItineraryItem ..> UC_ScheduleWarning : <<include>>
-UC_ItineraryCreate ..> UC_Weather : <<include>>
-UC_ItineraryAi ..> UC_Weather : <<include>>
-UC_ItineraryCreate ..> UC_RouteMap : <<include>>
-UC_ItineraryAi ..> UC_RouteMap : <<include>>
-UC_InviteCollab ..> UC_Notification : <<extend>>
+UC_AutoSort ..> UC_ItineraryItem : <<extend>>
+UC_ItineraryShow ..> UC_ScheduleWarning : <<include>>
+UC_ItineraryShow ..> UC_Cost : <<include>>
+UC_ItineraryShow ..> UC_Weather : <<include>>
+UC_ItineraryShow ..> UC_RouteMap : <<include>>
+UC_Pdf ..> UC_Cost : <<include>>
+UC_ViewShared ..> UC_ScheduleWarning : <<include>>
+UC_ViewShared ..> UC_Cost : <<include>>
+UC_ViewShared ..> UC_RouteMap : <<include>>
 
+' ===== Admin =====
 admin --> UC_AdminCategory
 admin --> UC_AdminDestination
 admin --> UC_AdminReview
@@ -119,15 +156,26 @@ admin --> UC_AdminUser
 admin --> UC_AdminDashboard
 admin --> UC_Profile
 admin --> UC_Logout
+admin --> UC_RecoveryCodes
+admin --> UC_TrustedDevices
+UC_AdminReset2fa ..> UC_AdminUser : <<extend>>
 
-UC_LoginGoogle ..> google : <<use>>
-UC_AiReco ..> gemini : <<use>>
-UC_ItineraryAi ..> gemini : <<use>>
-UC_Weather ..> meteo : <<use>>
-UC_RouteMap ..> "OpenStreetMap" : <<use>>
+' ===== Layanan eksternal =====
+UC_LoginGoogle --> google
+UC_AiReco --> gemini
+UC_ItineraryAi --> gemini
+UC_Weather --> meteo
+UC_RouteMap --> osm
 
+' ===== Sistem terjadwal =====
 scheduler --> UC_SendReminder
+scheduler --> UC_PruneDevices
 UC_SendReminder ..> UC_ReminderReceive : <<include>>
-traveler --> UC_ReminderReceive
+
+note bottom of UC_Login
+  Akun Admin ditolak di halaman Masuk Traveler
+  dan Masuk dengan Google; akun Traveler ditolak
+  di halaman Masuk Admin (pintu masuk terpisah).
+end note
 
 @enduml

@@ -3,6 +3,8 @@
 use App\Http\Middleware\EnsureTwoFactorSetUp;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\LogoutIdleSessions;
+use App\Http\Middleware\PreventSensitiveCaching;
+use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -19,10 +21,15 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => EnsureUserIsAdmin::class,
         ]);
 
+        // Global (bukan hanya grup web) supaya halaman 404 untuk URL yang
+        // tidak ada dan endpoint /up juga mendapat header keamanan.
+        $middleware->append(SecurityHeaders::class);
+
         // Daftar urut: sesi idle dikeluarkan dulu sebelum redirect setup 2FA
         $middleware->web(append: [
             LogoutIdleSessions::class,
             EnsureTwoFactorSetUp::class,
+            PreventSensitiveCaching::class,
         ]);
 
         // Logout paksa (idle) dari beberapa tab sekaligus: tab kedua membawa token

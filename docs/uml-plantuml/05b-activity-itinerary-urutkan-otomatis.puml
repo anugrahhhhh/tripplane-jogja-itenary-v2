@@ -1,0 +1,38 @@
+@startuml 05b-activity-itinerary-urutkan-otomatis
+title Activity Diagram - Mengurutkan Destinasi Secara Otomatis
+
+skinparam activity {
+  BackgroundColor #FAF8F3
+  BorderColor #2F6B5A
+  ArrowColor #2F6B5A
+  DiamondBackgroundColor #E8D5DA
+}
+skinparam swimlane {
+  BorderColor #2F6B5A
+}
+
+|Traveler|
+start
+:Buka halaman Itinerary\ndan pilih hari yang diinginkan;
+:Klik "Urutkan Otomatis";
+
+|Sistem|
+if (Traveler adalah pemilik\natau kolaborator?) then (tidak)
+  :Tolak, akses tidak diizinkan;
+  stop
+endif
+
+if (Ada minimal 2 destinasi\npada hari tersebut?) then (tidak)
+  :Tampilkan pesan\n"Minimal butuh 2 destinasi";
+  stop
+endif
+
+:Susun ulang urutan destinasi\nagar perjalanan antar tempat\nsedekat mungkin;
+:Simpan urutan baru;
+:Tampilkan pesan\n"Urutan berhasil disusun otomatis";
+
+|Traveler|
+:Melihat urutan destinasi yang baru;
+stop
+
+@enduml

@@ -40,18 +40,16 @@ endif
 :Susun prompt\n(preferensi + katalog + aturan penjadwalan);
 
 partition "Gemini API (CallsGeminiApi)" {
-  :Kirim request generateContent\n(responseSchema JSON hari & item);
-  if (Respons 503 / 429?) then (ya, coba ulang <= 3x)
-    :Tunggu 1.5 detik;
-    -> retry;
-  else (200 OK / gagal permanen)
-  endif
+  :Kirim request generateContent ke model utama\n(responseSchema JSON hari & item, timeout 20s,\ncoba ulang 1x jika 429/503/timeout);
+  while (Gagal 404/429/503/timeout\ndan masih ada model cadangan?) is (ya)
+    :Log peringatan,\npindah ke model cadangan berikutnya;
+  endwhile (tidak)
 }
 
-if (Request tetap gagal\nsetelah retry?) then (ya)
+if (Semua model gagal\natau error lain (400/401)?) then (ya)
   |AiItineraryController|
   :Tangkap RuntimeException;
-  :Set pesan error\n"Gagal menghubungi layanan AI";
+  :Set pesan error\n"Server AI sedang sangat sibuk";
   |Traveler|
   :Lihat pesan error;
   stop

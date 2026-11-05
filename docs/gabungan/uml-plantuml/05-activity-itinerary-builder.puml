@@ -49,14 +49,18 @@ else (Urutkan Otomatis)
 endif
 
 :Muat ulang halaman Itinerary;
-:ScheduleValidator::validateDay()\nuntuk hari aktif;
+:ItineraryInsights::build()\n(titik peta, peringatan, jarak per hari);
+:ScheduleValidator::validateDay(items, tanggal)\nuntuk hari aktif;
 
-if (Ada item di luar jam operasional\natau jadwal bertabrakan?) then (ya)
+if (Ada item di luar jam operasional,\ntutup pada hari itu (closed_days),\natau jadwal bertabrakan?) then (ya)
   :Tampilkan badge peringatan\npada item terkait;
 else (tidak)
 endif
 
+:Tampilkan jarak & waktu tempuh\nantar destinasi berurutan;
 :Tampilkan peta rute (Leaflet)\n+ badge cuaca hari itu;
+:ItineraryCostEstimator::estimate()\n(biaya tiket per hari, per orang,\nx traveler_count);
+:Tampilkan estimasi biaya;
 stop
 
 @enduml

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Services\OperatingHoursService;
+use App\Support\FavoriteLookup;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -25,6 +26,7 @@ class Destination extends Model
         'price_max',
         'open_time',
         'close_time',
+        'closed_days',
         'cover_photo',
         'is_active',
     ];
@@ -36,6 +38,7 @@ class Destination extends Model
             'longitude' => 'float',
             'price_min' => 'integer',
             'price_max' => 'integer',
+            'closed_days' => 'array',
             'is_active' => 'boolean',
         ];
     }
@@ -98,13 +101,13 @@ class Destination extends Model
         return $this->visibleReviews()->count();
     }
 
+    /**
+     * Satu query per halaman untuk semua kartu (lihat FavoriteLookup),
+     * bukan satu query per destinasi.
+     */
     public function isFavoritedBy(?User $user): bool
     {
-        if (! $user) {
-            return false;
-        }
-
-        return $this->favorites()->where('user_id', $user->id)->exists();
+        return FavoriteLookup::has($user, $this->getKey());
     }
 
     public function isOpenNow(): bool

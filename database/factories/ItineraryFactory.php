@@ -16,6 +16,7 @@ class ItineraryFactory extends Factory
             'title' => 'Liburan '.$this->faker->city(),
             'start_date' => $start,
             'end_date' => $start->copy()->addDays(1),
+            'traveler_count' => 1,
             'type' => 'planned',
         ];
     }

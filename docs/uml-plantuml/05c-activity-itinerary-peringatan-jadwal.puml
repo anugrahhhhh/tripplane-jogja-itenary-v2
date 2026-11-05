@@ -1,0 +1,47 @@
+@startuml 05c-activity-itinerary-peringatan-jadwal
+title Activity Diagram - Itinerary Harian (1/2): Menampilkan Peringatan Jadwal
+
+skinparam activity {
+  BackgroundColor #FAF8F3
+  BorderColor #2F6B5A
+  ArrowColor #2F6B5A
+  DiamondBackgroundColor #E8D5DA
+}
+skinparam swimlane {
+  BorderColor #2F6B5A
+}
+
+|Traveler|
+start
+:Buka halaman Itinerary\ndan pilih hari yang diinginkan;
+
+|Sistem|
+if (Traveler adalah pemilik\natau kolaborator?) then (tidak)
+  :Tolak, akses tidak diizinkan;
+  stop
+endif
+
+:Tampilkan daftar destinasi hari tersebut;
+
+while (Masih ada destinasi yang belum diperiksa?) is (ya)
+  if (Jadwal di luar jam buka?) then (ya)
+    :Beri peringatan\n"Di luar jam operasional";
+  else (tidak)
+  endif
+  if (Destinasi tutup pada hari itu?) then (ya)
+    :Beri peringatan\n"Tutup setiap hari X";
+  else (tidak)
+  endif
+  if (Jadwal bertabrakan dengan\ndestinasi lain?) then (ya)
+    :Beri peringatan\n"Jadwal bertabrakan";
+  else (tidak)
+  endif
+endwhile (tidak)
+
+:Tampilkan peringatan pada destinasi terkait;
+
+|Traveler|
+:Melihat jadwal beserta peringatannya;
+stop
+
+@enduml

@@ -1,5 +1,5 @@
 @startuml 04-activity-kolaborasi
-title Activity Diagram - Kolaborasi Itinerary (Undang / Keluarkan / Keluar)
+title Activity Diagram - Kolaborasi & Link Berbagi Itinerary
 
 skinparam activity {
   BackgroundColor #FAF8F3
@@ -11,7 +11,8 @@ skinparam activity {
 start
 :Buka halaman Itinerary;
 
-if (Aksi apa?) then (Undang Kolaborator)
+switch (Aksi apa?)
+case (Undang Kolaborator)
   :Pemilik isi email traveler\ndi form "Undang";
   :ItineraryCollaboratorController::store();
   if (Requester adalah pemilik\nitinerary ini?) then (tidak)
@@ -20,31 +21,22 @@ if (Aksi apa?) then (Undang Kolaborator)
   else (ya)
   endif
   :Cari user berdasarkan email;
-  if (User ditemukan?) then (tidak)
-    :Error "Belum ada akun\nterdaftar dengan email ini";
+  if (Email bisa diundang?) then (tidak)
+    :Tampilkan error sesuai alasan;
+    note right
+      - belum ada akun dengan email ini
+      - email milik pemilik sendiri
+      - akun Admin
+      - sudah jadi kolaborator
+    end note
     stop
   else (ya)
-  endif
-  if (Email = email pemilik sendiri?) then (ya)
-    :Error "Ini email kamu sendiri";
-    stop
-  else (tidak)
-  endif
-  if (User adalah Admin?) then (ya)
-    :Error "Akun Admin tidak bisa\ndiundang sebagai kolaborator";
-    stop
-  else (tidak)
-  endif
-  if (Sudah jadi kolaborator?) then (ya)
-    :Error "Sudah jadi kolaborator\ndi itinerary ini";
-    stop
-  else (tidak)
     :Tambahkan ke\nitinerary_collaborators (attach);
     :Redirect kembali dengan status\n"<Nama> berhasil diundang";
     stop
   endif
 
-else (Keluarkan / Keluar)
+case (Keluarkan / Keluar)
   :Klik "Keluarkan" (pemilik)\natau "Keluar" (kolaborator sendiri);
   :ItineraryCollaboratorController::destroy();
   if (Requester = pemilik\nATAU requester = kolaborator\nyang mau dihapus?) then (tidak)
@@ -60,6 +52,22 @@ else (Keluarkan / Keluar)
     :Redirect kembali dengan status\n"<Nama> dikeluarkan";
     stop
   endif
-endif
+
+case (Kelola Link Berbagi)
+  :ItineraryShareController;
+  if (Requester adalah pemilik\nitinerary ini?) then (tidak)
+    :403 Forbidden;
+    stop
+  else (ya)
+  endif
+  if (Buat / buat ulang\natau matikan?) then (buat / buat ulang)
+    :share_token = Str::random(40)\n(token lama otomatis tidak berlaku);
+    :Status "Link berbagi dibuat"\n+ tampilkan /bagikan/{token};
+  else (matikan)
+    :share_token = null;
+    :Status "Link berbagi dimatikan";
+  endif
+  stop
+endswitch
 
 @enduml

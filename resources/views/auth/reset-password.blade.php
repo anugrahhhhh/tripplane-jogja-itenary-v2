@@ -12,7 +12,8 @@
 
         <div class="mt-4">
             <x-input-label for="password" value="Kata Sandi Baru" />
-            <x-text-input id="password" class="block mt-1 w-full" type="password" name="password" required autocomplete="new-password" />
+            <x-text-input id="password" class="block mt-1 w-full" type="password" name="password" required minlength="8" autocomplete="new-password" aria-describedby="password-hint" />
+            <p id="password-hint" class="mt-1.5 text-xs text-ink/50">Minimal 8 karakter, berisi huruf dan angka.</p>
             <x-input-error :messages="$errors->get('password')" class="mt-2" />
         </div>
 

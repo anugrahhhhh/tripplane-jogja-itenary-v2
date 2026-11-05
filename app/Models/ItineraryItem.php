@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -42,8 +43,8 @@ class ItineraryItem extends Model
         return $this->belongsTo(Destination::class);
     }
 
-    public function endTime(): \Carbon\Carbon
+    public function endTime(): Carbon
     {
-        return \Carbon\Carbon::parse($this->start_time)->addMinutes($this->duration_minutes);
+        return Carbon::parse($this->start_time)->addMinutes($this->duration_minutes);
     }
 }
