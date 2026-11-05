@@ -13,6 +13,15 @@ class IdleTimeoutTest extends TestCase
 
     private const MESSAGE = 'Kamu keluar otomatis karena tidak aktif selama 2 menit.';
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Bekukan waktu: tanpa ini, pergantian detik di antara dua request
+        // membuat travel(120) terbaca 121 detik dan test gagal sesekali.
+        $this->freezeTime();
+    }
+
     public function test_user_is_still_logged_in_after_119_seconds(): void
     {
         $this->actingAs(User::factory()->create())->get('/profile')->assertOk();

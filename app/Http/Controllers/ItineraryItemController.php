@@ -7,6 +7,8 @@ use App\Models\ItineraryItem;
 use App\Services\NearestNeighborSorter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class ItineraryItemController extends Controller
 {
@@ -15,7 +17,7 @@ class ItineraryItemController extends Controller
         $this->authorizeAccess($itinerary);
 
         $data = $request->validate([
-            'destination_id' => ['required', 'exists:destinations,id'],
+            'destination_id' => ['required', 'integer', Rule::exists('destinations', 'id')->where('is_active', true)],
             'day_number' => ['required', 'integer', 'min:1', 'max:'.$itinerary->totalDays()],
             'start_time' => ['required', 'date_format:H:i'],
             'duration_minutes' => ['required', 'integer', 'min:15', 'max:600'],
@@ -70,11 +72,15 @@ class ItineraryItemController extends Controller
             'item_ids.*' => ['integer', 'exists:itinerary_items,id'],
         ]);
 
-        foreach ($data['item_ids'] as $order => $itemId) {
-            ItineraryItem::where('id', $itemId)
-                ->where('itinerary_id', $itinerary->id)
-                ->update(['sort_order' => $order]);
-        }
+        // Satu transaksi: kalau gagal di tengah, urutan lama tetap utuh
+        // (tidak tersimpan setengah lama, setengah baru).
+        DB::transaction(function () use ($data, $itinerary) {
+            foreach ($data['item_ids'] as $order => $itemId) {
+                ItineraryItem::where('id', $itemId)
+                    ->where('itinerary_id', $itinerary->id)
+                    ->update(['sort_order' => $order]);
+            }
+        });
 
         return back()->with('status', 'Urutan berhasil diperbarui.');
     }
@@ -103,9 +109,11 @@ class ItineraryItemController extends Controller
 
         $sorted = NearestNeighborSorter::sort($dayItems);
 
-        foreach ($sorted->values() as $index => $item) {
-            $item->update(['sort_order' => $index]);
-        }
+        DB::transaction(function () use ($sorted) {
+            foreach ($sorted->values() as $index => $item) {
+                $item->update(['sort_order' => $index]);
+            }
+        });
 
         return back()->with('status', 'Urutan berhasil disusun otomatis berdasarkan jarak terdekat.');
     }

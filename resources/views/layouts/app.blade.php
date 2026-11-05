@@ -12,8 +12,7 @@
         <link rel="icon" href="/icons/icon-192.png">
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet" />
+        @include('partials.fonts')
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
 
@@ -28,30 +27,29 @@
         </script>
     </head>
     <body class="font-sans antialiased bg-cream text-ink">
+        <a href="#konten-utama" class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:rounded-xl focus:bg-primary-700 focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white focus:shadow-lift focus:outline-none focus:ring-2 focus:ring-accent-400">Lewati ke konten utama</a>
         <div class="min-h-screen flex flex-col">
             @include('layouts.navigation')
 
-            @if (session('status'))
-                <div class="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 mt-4">
-                    <div class="rounded-lg bg-primary-50 border border-primary-200 text-primary-800 px-4 py-3 text-sm">
-                        {{ session('status') }}
-                    </div>
-                </div>
-            @endif
+            @include('partials.flash')
 
             @auth
                 @include('partials.recovery-codes-banner')
             @endauth
 
             @isset($header)
-                <header class="bg-white border-b border-primary-100">
-                    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+                <header class="relative z-10 bg-gradient-to-br from-primary-50 via-cream to-accent-50 border-b border-primary-100/70">
+                    <div aria-hidden="true" class="pointer-events-none absolute inset-0 overflow-hidden">
+                        <div class="absolute inset-0 pattern-dots-dark opacity-60"></div>
+                        <div class="absolute -top-24 -right-16 w-72 h-72 rounded-full bg-accent-200/40 blur-3xl"></div>
+                    </div>
+                    <div class="relative max-w-7xl mx-auto py-8 sm:py-10 px-4 sm:px-6 lg:px-8">
                         {{ $header }}
                     </div>
                 </header>
             @endisset
 
-            <main class="flex-1">
+            <main id="konten-utama" tabindex="-1" class="flex-1 focus:outline-none">
                 {{ $slot }}
             </main>
 

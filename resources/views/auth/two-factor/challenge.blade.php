@@ -1,6 +1,6 @@
 <x-guest-layout>
     <div x-data="{ recovery: {{ $errors->has('code') && old('recovery_code') ? 'true' : 'false' }} }">
-        <h1 class="text-lg font-semibold text-ink">Verifikasi dua langkah</h1>
+        <h1 class="text-2xl font-extrabold text-ink">Verifikasi dua langkah</h1>
 
         <form method="POST" action="{{ route('two-factor.challenge.store') }}" class="mt-4">
             @csrf

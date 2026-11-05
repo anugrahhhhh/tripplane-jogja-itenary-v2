@@ -1,17 +1,17 @@
 <x-guest-layout>
-    <h1 class="text-lg font-semibold text-ink">Aktifkan verifikasi dua langkah</h1>
+    <h1 class="text-2xl font-extrabold text-ink">Aktifkan verifikasi dua langkah</h1>
     <p class="mt-2 mb-4 text-sm text-ink/60">
         Demi keamanan, akunmu wajib dilindungi 2FA. Pindai kode QR di bawah dengan aplikasi authenticator
         (Google Authenticator, Authy, dll.), lalu masukkan kode 6 digit yang muncul.
     </p>
 
-    <div class="flex justify-center rounded-lg bg-white p-3 border border-ink/10">
+    <div class="flex justify-center rounded-2xl bg-white p-4 ring-1 ring-primary-100 shadow-soft">
         <div class="w-48 h-48">{!! $qrSvg !!}</div>
     </div>
 
     <div class="mt-4 text-sm text-ink/60">
         Tidak bisa memindai? Masukkan kunci ini secara manual:
-        <div class="mt-1 font-mono text-base tracking-widest text-ink select-all">{{ $secretGroups }}</div>
+        <div class="mt-2 rounded-xl bg-cream ring-1 ring-primary-100 px-3 py-2 font-mono text-base tracking-widest text-ink select-all text-center">{{ $secretGroups }}</div>
     </div>
 
     <form method="POST" action="{{ route('two-factor.setup.store') }}" class="mt-6">

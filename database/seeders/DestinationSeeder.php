@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Category;
 use App\Models\Destination;
+use App\Support\CatalogCache;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -940,5 +941,9 @@ class DestinationSeeder extends Seeder
         // destinasi yang tidak lagi ada di 72 data resmi di atas dihapus
         // agar aplikasi konsisten dengan scope baru.
         Destination::whereNotIn('slug', $validSlugs)->delete();
+
+        // Hapus massal di atas tidak memicu event model, jadi cache katalog
+        // dikosongkan manual.
+        CatalogCache::flush();
     }
 }

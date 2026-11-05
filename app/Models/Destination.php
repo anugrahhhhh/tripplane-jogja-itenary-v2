@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Services\OperatingHoursService;
+use App\Support\FavoriteLookup;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -100,13 +101,13 @@ class Destination extends Model
         return $this->visibleReviews()->count();
     }
 
+    /**
+     * Satu query per halaman untuk semua kartu (lihat FavoriteLookup),
+     * bukan satu query per destinasi.
+     */
     public function isFavoritedBy(?User $user): bool
     {
-        if (! $user) {
-            return false;
-        }
-
-        return $this->favorites()->where('user_id', $user->id)->exists();
+        return FavoriteLookup::has($user, $this->getKey());
     }
 
     public function isOpenNow(): bool

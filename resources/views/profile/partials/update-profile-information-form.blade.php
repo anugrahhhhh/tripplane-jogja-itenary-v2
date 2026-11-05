@@ -1,6 +1,6 @@
 <section>
     <header>
-        <h2 class="text-lg font-semibold text-ink">
+        <h2 class="text-lg font-bold text-ink">
             Informasi Profil
         </h2>
 
@@ -56,8 +56,8 @@
                     x-show="show"
                     x-transition
                     x-init="setTimeout(() => show = false, 2000)"
-                    class="text-sm text-primary-700"
-                >Tersimpan.</p>
+                    class="inline-flex items-center gap-1 text-sm font-semibold text-primary-700"
+                >&#10003; Tersimpan.</p>
             @endif
         </div>
     </form>

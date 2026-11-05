@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Support\OutboundUrl;
 use Carbon\CarbonInterface;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -67,6 +68,8 @@ class NewLoginNotification extends Notification implements ShouldQueue
 
     private function notMeUrl(object $notifiable): string
     {
-        return URL::temporarySignedRoute('security.not-me', now()->addHours(24), ['user' => $notifiable->id]);
+        return OutboundUrl::using(
+            fn () => URL::temporarySignedRoute('security.not-me', now()->addHours(24), ['user' => $notifiable->id])
+        );
     }
 }

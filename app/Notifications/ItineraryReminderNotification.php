@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Itinerary;
+use App\Support\OutboundUrl;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -16,9 +17,7 @@ class ItineraryReminderNotification extends Notification
      * belum menjalankan queue worker, jadi notifikasi harus langsung
      * terkirim saat command dijalankan, bukan menunggu di antrean.
      */
-    public function __construct(protected Itinerary $itinerary)
-    {
-    }
+    public function __construct(protected Itinerary $itinerary) {}
 
     /**
      * @return array<int, string>
@@ -37,7 +36,7 @@ class ItineraryReminderNotification extends Notification
             ->greeting('Halo, '.$notifiable->name.'!')
             ->line('Itinerary "'.$this->itinerary->title.'" dijadwalkan mulai besok, '.$this->itinerary->start_date->translatedFormat('d F Y').'.')
             ->line('Perjalanan ini berlangsung selama '.$totalDays.' hari, sampai '.$this->itinerary->end_date->translatedFormat('d F Y').'.')
-            ->action('Lihat Itinerary', route('itineraries.show', $this->itinerary))
+            ->action('Lihat Itinerary', OutboundUrl::using(fn () => route('itineraries.show', $this->itinerary)))
             ->line('Jangan lupa cek ulang jadwal dan siapkan perlengkapanmu. Selamat berlibur di Yogyakarta!');
     }
 

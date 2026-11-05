@@ -1,13 +1,13 @@
 <x-guest-layout>
-    <h1 class="text-lg font-semibold text-ink">Simpan kode pemulihan</h1>
+    <h1 class="text-2xl font-extrabold text-ink">Simpan kode pemulihan</h1>
     <p class="mt-2 mb-4 text-sm text-ink/60">
         Jika kehilangan akses ke aplikasi authenticator, kamu bisa masuk dengan salah satu kode ini.
         Setiap kode hanya berlaku sekali dan <strong>tidak akan ditampilkan lagi</strong>.
     </p>
 
-    <ul id="recovery-codes" class="grid grid-cols-2 gap-2 rounded-lg border border-ink/10 bg-white p-4 font-mono text-sm text-ink">
+    <ul id="recovery-codes" class="grid grid-cols-2 gap-2 rounded-2xl bg-cream ring-1 ring-primary-100 p-4 font-mono text-sm text-ink">
         @foreach ($codes as $code)
-            <li>{{ $code }}</li>
+            <li class="rounded-lg bg-white px-3 py-2 text-center ring-1 ring-primary-100 tracking-wider">{{ $code }}</li>
         @endforeach
     </ul>
 
@@ -26,10 +26,10 @@
             URL.revokeObjectURL(url);
         }
     }">
-        <button type="button" @click="copy()" class="text-sm underline text-ink/70 hover:text-ink">
+        <button type="button" @click="copy()" class="btn-secondary btn-sm">
             <span x-text="copied ? 'Tersalin' : 'Salin'">Salin</span>
         </button>
-        <button type="button" @click="download()" class="text-sm underline text-ink/70 hover:text-ink">Unduh .txt</button>
+        <button type="button" @click="download()" class="btn-secondary btn-sm">Unduh .txt</button>
     </div>
 
     <form method="POST" action="{{ route('two-factor.recovery-codes.ack') }}" class="flex justify-end mt-6">

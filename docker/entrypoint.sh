@@ -43,5 +43,9 @@ php artisan db:seed --force
 
 php artisan storage:link --force || true
 
+# Perintah artisan di atas berjalan sebagai root; kalau sempat menulis log,
+# file-nya jadi milik root dan PHP-FPM (www-data) gagal menulis log berikutnya.
+chown -R www-data:www-data storage/logs storage/framework 2>/dev/null || true
+
 echo "[entrypoint] Siap. Menjalankan: $*"
 exec "$@"
