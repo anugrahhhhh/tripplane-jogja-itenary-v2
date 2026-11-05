@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Middleware\LogoutIdleSessions;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Services\Auth\TwoFactorGate;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -23,26 +25,20 @@ class AuthenticatedSessionController extends Controller
     /**
      * Handle an incoming authentication request.
      */
-    public function store(LoginRequest $request): RedirectResponse
+    public function store(LoginRequest $request, TwoFactorGate $gate): RedirectResponse
     {
-        $request->authenticate();
+        $user = $request->validatedUser();
 
         // Halaman masuk ini khusus wisatawan. Akun admin punya pintu masuk
         // terpisah di /admin/login agar akses kedua peran benar-benar
         // terpisah, bukan sekadar diarahkan ulang setelah berhasil masuk.
-        if ($request->user()->isAdmin()) {
-            Auth::guard('web')->logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-
+        if ($user->isAdmin()) {
             throw ValidationException::withMessages([
                 'email' => 'Akun ini adalah akun Admin. Silakan masuk lewat halaman khusus Admin.',
             ]);
         }
 
-        $request->session()->regenerate();
-
-        return redirect()->intended(route('dashboard', absolute: false));
+        return $gate->pass($request, $user, 'password', $request->session()->pull('url.intended', route('home')));
     }
 
     /**
@@ -50,11 +46,19 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        $isAdmin = (bool) $request->user()?->isAdmin();
+
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
 
         $request->session()->regenerateToken();
+
+        if ($request->input('reason') === 'idle') {
+            return redirect()
+                ->route($isAdmin ? 'admin.login' : 'login')
+                ->with('status', LogoutIdleSessions::message());
+        }
 
         return redirect('/');
     }

@@ -19,6 +19,7 @@
         @else
             <div class="space-y-2">
                 @foreach ($notifications as $notification)
+                    <div>
                     <form action="{{ route('notifications.read', $notification->id) }}" method="POST">
                         @csrf
                         <button type="submit" class="w-full text-left rounded-xl border px-4 py-3 transition {{ $notification->read_at ? 'bg-white border-primary-100' : 'bg-primary-50 border-primary-200' }} hover:border-primary-300">
@@ -33,6 +34,10 @@
                             </div>
                         </button>
                     </form>
+                    @if (! empty($notification->data['action_url']))
+                        <a href="{{ $notification->data['action_url'] }}" class="mt-1 ml-4 inline-block text-sm font-semibold text-accent-500 hover:underline">{{ $notification->data['action_label'] ?? 'Buka' }}</a>
+                    @endif
+                    </div>
                 @endforeach
             </div>
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Models\User;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -34,23 +35,42 @@ class LoginRequest extends FormRequest
     }
 
     /**
-     * Attempt to authenticate the request's credentials.
+     * Validasi kredensial TANPA login: login ditentukan oleh TwoFactorGate.
      *
      * @throws ValidationException
      */
-    public function authenticate(): void
+    public function validatedUser(): User
     {
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
-            RateLimiter::hit($this->throttleKey());
+        $provider = Auth::guard()->getProvider();
+        $credentials = $this->only('email', 'password');
+        $user = $provider->retrieveByCredentials($credentials);
 
-            throw ValidationException::withMessages([
-                'email' => trans('auth.failed'),
-            ]);
+        if (! $user instanceof User || ! $provider->validateCredentials($user, $credentials)) {
+            $this->failCredentials();
         }
 
         RateLimiter::clear($this->throttleKey());
+
+        // Login manual tidak lewat Auth::attempt, jadi rehash diulang di sini
+        if (config('hashing.rehash_on_login', true)) {
+            $provider->rehashPasswordIfRequired($user, $credentials);
+        }
+
+        return $user;
+    }
+
+    /**
+     * @throws ValidationException
+     */
+    private function failCredentials(): never
+    {
+        RateLimiter::hit($this->throttleKey());
+
+        throw ValidationException::withMessages([
+            'email' => trans('auth.failed'),
+        ]);
     }
 
     /**

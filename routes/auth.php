@@ -6,11 +6,18 @@ use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Auth\NewPasswordController;
+use App\Http\Controllers\Auth\NotMeController;
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\Auth\TwoFactorChallengeController;
+use App\Http\Controllers\Auth\TwoFactorSetupController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
+
+// Link "Bukan saya" dari email; signature dicek manual di controller
+Route::get('keamanan/bukan-saya/{user}', [NotMeController::class, 'show'])->name('security.not-me');
+Route::post('keamanan/bukan-saya/{user}', [NotMeController::class, 'confirm'])->name('security.not-me.confirm');
 
 Route::middleware('guest')->group(function () {
     Route::get('register', [RegisteredUserController::class, 'create'])
@@ -22,6 +29,9 @@ Route::middleware('guest')->group(function () {
         ->name('login');
 
     Route::post('login', [AuthenticatedSessionController::class, 'store']);
+
+    Route::get('dua-faktor', [TwoFactorChallengeController::class, 'create'])->name('two-factor.challenge');
+    Route::post('dua-faktor', [TwoFactorChallengeController::class, 'store'])->name('two-factor.challenge.store');
 
     Route::get('auth/google/redirect', [GoogleAuthController::class, 'redirect'])->name('auth.google.redirect');
     Route::get('auth/google/callback', [GoogleAuthController::class, 'callback'])->name('auth.google.callback');
@@ -40,6 +50,11 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
+    Route::get('dua-faktor/aktifkan', [TwoFactorSetupController::class, 'show'])->name('two-factor.setup');
+    Route::post('dua-faktor/aktifkan', [TwoFactorSetupController::class, 'store'])->name('two-factor.setup.store');
+    Route::get('dua-faktor/recovery-codes', [TwoFactorSetupController::class, 'recoveryCodes'])->name('two-factor.recovery-codes');
+    Route::post('dua-faktor/recovery-codes', [TwoFactorSetupController::class, 'acknowledge'])->name('two-factor.recovery-codes.ack');
+
     Route::get('verify-email', EmailVerificationPromptController::class)
         ->name('verification.notice');
 

@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Middleware\EnsureTwoFactorSetUp;
 use App\Http\Middleware\EnsureUserIsAdmin;
+use App\Http\Middleware\LogoutIdleSessions;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -16,6 +18,16 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => EnsureUserIsAdmin::class,
         ]);
+
+        // Daftar urut: sesi idle dikeluarkan dulu sebelum redirect setup 2FA
+        $middleware->web(append: [
+            LogoutIdleSessions::class,
+            EnsureTwoFactorSetUp::class,
+        ]);
+
+        // Logout paksa (idle) dari beberapa tab sekaligus: tab kedua membawa token
+        // CSRF dari sesi yang sudah dihapus dan akan kena 419. Dampak logout paksa kecil.
+        $middleware->validateCsrfTokens(except: ['logout']);
 
         // Tamu yang belum masuk dan membuka halaman /admin/* diarahkan ke
         // pintu masuk Admin, bukan halaman masuk wisatawan, agar pemisahan

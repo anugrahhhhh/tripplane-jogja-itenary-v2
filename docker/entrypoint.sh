@@ -14,6 +14,10 @@ if [ ! -f .env ]; then
 fi
 
 if [ -z "$APP_KEY" ] && ! grep -q "^APP_KEY=base64:" .env; then
+    if [ "$APP_ENV" = "production" ]; then
+        echo "[entrypoint] APP_KEY wajib diisi di production; jangan generate otomatis karena secret 2FA terenkripsi dengan kunci ini."
+        exit 1
+    fi
     echo "[entrypoint] APP_KEY belum diisi, generate baru..."
     php artisan key:generate --force
 fi

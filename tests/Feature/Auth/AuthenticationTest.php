@@ -4,6 +4,7 @@ namespace Tests\Feature\Auth;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class AuthenticationTest extends TestCase
@@ -26,8 +27,9 @@ class AuthenticationTest extends TestCase
             'password' => 'password',
         ]);
 
-        $this->assertAuthenticated();
-        $response->assertRedirect(route('dashboard', absolute: false));
+        // Password benar belum cukup: user baru login setelah lolos challenge 2FA.
+        $this->assertGuest();
+        $response->assertRedirect(route('two-factor.challenge'));
     }
 
     public function test_users_can_not_authenticate_with_invalid_password(): void
@@ -50,5 +52,19 @@ class AuthenticationTest extends TestCase
 
         $this->assertGuest();
         $response->assertRedirect('/');
+    }
+
+    public function test_login_rehashes_password_hashed_with_outdated_cost(): void
+    {
+        $user = User::factory()->create(['password' => Hash::make('password', ['rounds' => 4])]);
+        $old = $user->password;
+        Hash::driver('bcrypt')->setRounds(6);
+
+        $this->post('/login', ['email' => $user->email, 'password' => 'password']);
+
+        $user->refresh();
+        $this->assertNotSame($old, $user->password);
+        $this->assertFalse(Hash::needsRehash($user->password));
+        $this->assertTrue(Hash::check('password', $user->password));
     }
 }

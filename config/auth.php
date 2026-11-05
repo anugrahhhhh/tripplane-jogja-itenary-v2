@@ -114,4 +114,16 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Idle Timeout
+    |--------------------------------------------------------------------------
+    |
+    | Jumlah detik tanpa aktivitas sebelum user yang sudah masuk dikeluarkan
+    | otomatis.
+    |
+    */
+
+    'idle_timeout' => (int) env('AUTH_IDLE_TIMEOUT', 120),
+
 ];

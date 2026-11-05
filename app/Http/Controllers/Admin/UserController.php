@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Actions\Auth\SecureAccountAction;
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Notifications\TwoFactorResetByAdminNotification;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -32,5 +35,16 @@ class UserController extends Controller
         $user->load(['favorites.destination', 'reviews.destination', 'itineraries']);
 
         return view('admin.users.show', ['user' => $user]);
+    }
+
+    public function resetTwoFactor(Request $request, User $user, SecureAccountAction $secureAccount): RedirectResponse
+    {
+        // Admin tidak boleh mereset 2FA-nya sendiri.
+        abort_if($request->user()->is($user), 403);
+
+        $secureAccount->handle($user);
+        $user->notify(new TwoFactorResetByAdminNotification);
+
+        return back()->with('status', '2FA pengguna berhasil di-reset.');
     }
 }

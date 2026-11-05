@@ -9,9 +9,11 @@ use App\Http\Controllers\ItineraryController;
 use App\Http\Controllers\ItineraryItemController;
 use App\Http\Controllers\NearbyController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\Profile\TwoFactorSecurityController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RecommendationController;
 use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\SessionPingController;
 use App\Http\Controllers\TodayItineraryController;
 use Illuminate\Support\Facades\Route;
 
@@ -35,9 +37,15 @@ Route::get('/dashboard', fn () => redirect()->route('home'))
     ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
+    Route::post('/sesi/ping', SessionPingController::class)->name('session.ping');
+
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    Route::post('/profile/keamanan/recovery-codes', [TwoFactorSecurityController::class, 'regenerateRecoveryCodes'])->name('profile.recovery-codes.regenerate');
+    Route::delete('/profile/keamanan/perangkat/{trustedDevice}', [TwoFactorSecurityController::class, 'destroyDevice'])->whereNumber('trustedDevice')->name('profile.trusted-devices.destroy');
+    Route::delete('/profile/keamanan/perangkat', [TwoFactorSecurityController::class, 'destroyAllDevices'])->name('profile.trusted-devices.destroy-all');
 
     Route::get('/favorit', [FavoriteController::class, 'index'])->name('favorites.index');
     Route::post('/destinasi/{destination}/favorit', [FavoriteController::class, 'store'])->name('favorites.store');

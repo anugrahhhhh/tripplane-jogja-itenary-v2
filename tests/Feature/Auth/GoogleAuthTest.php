@@ -30,7 +30,7 @@ class GoogleAuthTest extends TestCase
 
         $response = $this->get(route('auth.google.callback'));
 
-        $response->assertRedirect(route('home'));
+        $response->assertRedirect(route('two-factor.setup'));
         $this->assertAuthenticated();
 
         $user = User::where('email', 'baru@example.com')->first();
@@ -48,8 +48,8 @@ class GoogleAuthTest extends TestCase
 
         $response = $this->get(route('auth.google.callback'));
 
-        $response->assertRedirect(route('home'));
-        $this->assertAuthenticatedAs($existing->fresh());
+        $response->assertRedirect(route('two-factor.challenge'));
+        $this->assertGuest();
         $this->assertSame('google-456', $existing->fresh()->google_id);
     }
 
@@ -59,9 +59,10 @@ class GoogleAuthTest extends TestCase
 
         $this->fakeGoogleUser('google-789', 'email-baru-di-google@example.com');
 
-        $this->get(route('auth.google.callback'));
+        $this->get(route('auth.google.callback'))->assertRedirect(route('two-factor.challenge'));
 
-        $this->assertAuthenticatedAs($existing->fresh());
+        $this->assertGuest();
+        $this->assertSame($existing->id, session('two_factor.pending.user_id'));
     }
 
     public function test_an_admin_account_can_never_log_in_via_google(): void
