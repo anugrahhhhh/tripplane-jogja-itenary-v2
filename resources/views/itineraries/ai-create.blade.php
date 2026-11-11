@@ -22,7 +22,7 @@
             </div>
         @endif
 
-        <form action="{{ route('itineraries.ai-store') }}" method="POST" x-data="aiItineraryForm()" @submit="submitting = true" class="card divide-y divide-primary-50">
+        <form action="{{ route('itineraries.ai-store') }}" method="POST" data-warn-unsaved x-data="aiItineraryForm()" @submit="submitting = true" class="card divide-y divide-primary-50">
             @csrf
             <input type="hidden" name="lat" :value="lat">
             <input type="hidden" name="lng" :value="lng">
@@ -100,7 +100,7 @@
             </section>
 
             <div class="p-6 sm:px-8 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 bg-cream/50 rounded-b-2xl">
-                <p class="text-xs text-ink/50" role="status" aria-live="polite" x-text="submitting ? 'AI sedang bekerja. Biasanya 5–20 detik, paling lama sekitar 1 menit. Jangan tutup halaman ini.' : 'Proses penyusunan biasanya butuh beberapa detik.'">Proses penyusunan biasanya butuh beberapa detik.</p>
+                <p class="text-xs text-ink/50" role="status" aria-live="polite" x-text="submitting ? 'Mengirim permintaan ke AI…' : 'Setelah dikirim, kamu bisa memantau progresnya. Biasanya 5–20 detik.'">Setelah dikirim, kamu bisa memantau progresnya. Biasanya 5–20 detik.</p>
                 <div class="flex flex-col-reverse sm:flex-row gap-2">
                     <a href="{{ route('itineraries.index') }}" class="btn-secondary">Batal</a>
                     <button type="submit" :disabled="submitting" class="btn-primary px-6">

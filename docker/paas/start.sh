@@ -13,7 +13,7 @@ php-fpm -D
 echo "[start] Menjalankan queue worker (background, auto-restart)..."
 (
   while true; do
-    su -s /bin/sh www-data -c "php artisan queue:work --tries=3 --backoff=30 --max-time=3600" || true
+    su -s /bin/sh www-data -c "php artisan queue:work --queue=default,ai --tries=3 --backoff=30 --max-time=3600" || true
     echo "[start] queue worker berhenti, restart dalam 3 detik..."
     sleep 3
   done

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Support\CircuitBreaker;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -64,50 +65,123 @@ class WeatherService
             $endDate->toDateString()
         );
 
-        return Cache::remember($cacheKey, now()->addMinutes(45), function () use ($lat, $lng, $startDate, $endDate) {
-            try {
-                $response = Http::timeout(10)->get('https://api.open-meteo.com/v1/forecast', [
-                    'latitude' => $lat,
-                    'longitude' => $lng,
-                    'daily' => 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max',
-                    'timezone' => 'Asia/Jakarta',
-                    'start_date' => $startDate->toDateString(),
-                    'end_date' => $endDate->toDateString(),
-                ]);
+        $cached = $this->cacheGet($cacheKey);
 
-                if ($response->failed()) {
-                    Log::warning('Panggilan Open-Meteo gagal', ['status' => $response->status()]);
+        if (is_array($cached)) {
+            return $cached;
+        }
 
-                    return [];
-                }
+        // Ketahanan: sirkuit terbuka (Open-Meteo sedang gangguan) -> tidak
+        // usah menunggu timeout, langsung pakai data terakhir yang ada.
+        $breaker = CircuitBreaker::for('weather');
 
-                $daily = $response->json('daily');
+        if (! $breaker->allows()) {
+            return $this->staleOrEmpty($cacheKey);
+        }
 
-                if (! is_array($daily) || ! isset($daily['time']) || ! is_array($daily['time'])) {
-                    return [];
-                }
+        $fresh = $this->fetch($lat, $lng, $startDate, $endDate);
 
-                $result = [];
+        if ($fresh === null) {
+            $breaker->recordFailure();
+            $fallback = $this->staleOrEmpty($cacheKey);
+            // Kegagalan hanya di-cache sebentar supaya cepat pulih.
+            $this->cachePut($cacheKey, $fallback, now()->addMinutes(2));
 
-                foreach ($daily['time'] as $index => $date) {
-                    $code = $daily['weather_code'][$index] ?? null;
-                    [$label, $icon] = self::WEATHER_LABELS[$code] ?? ['Tidak diketahui', '🌡️'];
+            return $fallback;
+        }
 
-                    $result[$date] = [
-                        'label' => $label,
-                        'icon' => $icon,
-                        'temp_min' => $daily['temperature_2m_min'][$index] ?? null,
-                        'temp_max' => $daily['temperature_2m_max'][$index] ?? null,
-                        'precipitation_probability' => $daily['precipitation_probability_max'][$index] ?? null,
-                    ];
-                }
+        $breaker->recordSuccess();
+        $this->cachePut($cacheKey, $fresh, now()->addMinutes(45));
 
-                return $result;
-            } catch (Throwable $e) {
-                Log::warning('Gagal mengambil prakiraan cuaca', ['message' => $e->getMessage()]);
+        if ($fresh !== []) {
+            $this->cachePut('stale:'.$cacheKey, $fresh, now()->addHours(config('resilience.weather_stale_hours', 72)));
+        }
 
-                return [];
-            }
-        });
+        return $fresh;
+    }
+
+    /**
+     * Ambil prakiraan dari Open-Meteo. null = layanan gagal (dihitung oleh
+     * circuit breaker); array kosong = layanan sehat tapi tidak ada data.
+     *
+     * @return array<string, array<string, mixed>>|null
+     */
+    private function fetch(float $lat, float $lng, Carbon $startDate, Carbon $endDate): ?array
+    {
+        try {
+            $response = Http::timeout(10)->connectTimeout(4)->get('https://api.open-meteo.com/v1/forecast', [
+                'latitude' => $lat,
+                'longitude' => $lng,
+                'daily' => 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max',
+                'timezone' => 'Asia/Jakarta',
+                'start_date' => $startDate->toDateString(),
+                'end_date' => $endDate->toDateString(),
+            ]);
+        } catch (Throwable $e) {
+            Log::warning('Gagal mengambil prakiraan cuaca', ['message' => $e->getMessage()]);
+
+            return null;
+        }
+
+        if ($response->serverError() || $response->status() === 429) {
+            Log::warning('Panggilan Open-Meteo gagal', ['status' => $response->status()]);
+
+            return null;
+        }
+
+        // 4xx lain (mis. tanggal di luar jangkauan prakiraan) bukan gangguan layanan.
+        if ($response->failed()) {
+            return [];
+        }
+
+        $daily = $response->json('daily');
+
+        if (! is_array($daily) || ! isset($daily['time']) || ! is_array($daily['time'])) {
+            return [];
+        }
+
+        $result = [];
+
+        foreach ($daily['time'] as $index => $date) {
+            $code = $daily['weather_code'][$index] ?? null;
+            [$label, $icon] = self::WEATHER_LABELS[$code] ?? ['Tidak diketahui', '🌡️'];
+
+            $result[$date] = [
+                'label' => $label,
+                'icon' => $icon,
+                'temp_min' => $daily['temperature_2m_min'][$index] ?? null,
+                'temp_max' => $daily['temperature_2m_max'][$index] ?? null,
+                'precipitation_probability' => $daily['precipitation_probability_max'][$index] ?? null,
+            ];
+        }
+
+        return $result;
+    }
+
+    private function staleOrEmpty(string $cacheKey): array
+    {
+        $stale = $this->cacheGet('stale:'.$cacheKey);
+
+        return is_array($stale) ? $stale : [];
+    }
+
+    private function cacheGet(string $key): mixed
+    {
+        try {
+            return Cache::get($key);
+        } catch (Throwable $e) {
+            report($e);
+
+            return null;
+        }
+    }
+
+    private function cachePut(string $key, mixed $value, mixed $ttl): void
+    {
+        try {
+            Cache::put($key, $value, $ttl);
+        } catch (Throwable $e) {
+            report($e);
+        }
     }
 }

@@ -81,10 +81,9 @@ return [
 
         'failover' => [
             'transport' => 'failover',
-            'mailers' => [
-                'smtp',
-                'log',
-            ],
+            // Resilience: MAIL_MAILER=failover -> coba berurutan, mis.
+            // "smtp,postmark,log". Bila SMTP utama gagal, email tidak hilang.
+            'mailers' => array_values(array_filter(array_map('trim', explode(',', (string) env('MAIL_FAILOVER_MAILERS', 'smtp,log'))))),
             'retry_after' => 60,
         ],
 

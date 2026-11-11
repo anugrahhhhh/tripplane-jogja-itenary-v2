@@ -3,19 +3,23 @@
 namespace App\Notifications;
 
 use App\Models\Itinerary;
+use App\Notifications\Concerns\RetriesDelivery;
 use App\Support\OutboundUrl;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class ItineraryReminderNotification extends Notification
+class ItineraryReminderNotification extends Notification implements ShouldQueue
 {
     use Queueable;
+    use RetriesDelivery;
 
     /**
-     * Tidak implement ShouldQueue: dikirim sinkron karena aplikasi ini
-     * belum menjalankan queue worker, jadi notifikasi harus langsung
-     * terkirim saat command dijalankan, bukan menunggu di antrean.
+     * Lewat antrean: email dan notifikasi in-app dikirim sebagai job
+     * terpisah per penerima, jadi SMTP yang gangguan tidak menggagalkan
+     * notifikasi in-app atau penerima lain, dan dicoba ulang otomatis
+     * (RetriesDelivery). Dengan QUEUE_CONNECTION=sync tetap terkirim langsung.
      */
     public function __construct(protected Itinerary $itinerary) {}
 

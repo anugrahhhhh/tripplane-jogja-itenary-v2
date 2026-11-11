@@ -76,7 +76,7 @@
                                 <div class="inline-flex items-center gap-1.5">
                                     <a href="{{ route('destinations.show', $destination) }}" target="_blank" class="btn-ghost btn-sm" title="Lihat di situs">Lihat</a>
                                     <a href="{{ route('admin.destinations.edit', $destination) }}" class="btn-secondary btn-sm">Ubah</a>
-                                    <form action="{{ route('admin.destinations.destroy', $destination) }}" method="POST" class="inline" onsubmit="return confirm('Hapus destinasi ini beserta seluruh foto, favorit, ulasan, dan riwayatnya?')">
+                                    <form action="{{ route('admin.destinations.destroy', $destination) }}" method="POST" class="inline" data-confirm="Hapus destinasi ini beserta seluruh foto, favorit, ulasan, dan riwayatnya?" data-confirm-title="Hapus data?" data-confirm-button="Ya, hapus">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn-danger btn-sm">Hapus</button>

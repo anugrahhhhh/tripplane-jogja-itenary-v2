@@ -130,7 +130,7 @@
                                         </a>
                                         <div class="my-1 border-t border-primary-50"></div>
                                         @if ($itinerary->user_id === auth()->id())
-                                            <form action="{{ route('itineraries.destroy', $itinerary) }}" method="POST" onsubmit="return confirm('Hapus itinerary ini beserta seluruh jadwalnya?')">
+                                            <form action="{{ route('itineraries.destroy', $itinerary) }}" method="POST" data-confirm="Hapus itinerary ini beserta seluruh jadwalnya?" data-confirm-title="Hapus data?" data-confirm-button="Ya, hapus">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="w-full flex items-center gap-2 rounded-lg text-left px-3 py-2 text-sm text-red-500 hover:bg-red-50">
@@ -139,7 +139,7 @@
                                                 </button>
                                             </form>
                                         @else
-                                            <form action="{{ route('itinerary-collaborators.destroy', [$itinerary, auth()->user()]) }}" method="POST" onsubmit="return confirm('Keluar dari itinerary ini?')">
+                                            <form action="{{ route('itinerary-collaborators.destroy', [$itinerary, auth()->user()]) }}" method="POST" data-confirm="Keluar dari itinerary ini?">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="w-full flex items-center gap-2 rounded-lg text-left px-3 py-2 text-sm text-red-500 hover:bg-red-50">

@@ -2,13 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AiTask;
 use App\Models\Category;
-use App\Services\LlmRecommendationService;
+use App\Support\AiTaskLauncher;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\View\View;
-use RuntimeException;
 
 class RecommendationController extends Controller
 {
@@ -19,17 +18,11 @@ class RecommendationController extends Controller
         ]);
     }
 
-    public function store(Request $request, LlmRecommendationService $llm): View|RedirectResponse
+    public function store(Request $request, AiTaskLauncher $launcher): RedirectResponse
     {
-        $throttleKey = 'ai-recommendation:'.$request->ip();
-
-        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
-            $seconds = RateLimiter::availableIn($throttleKey);
-
-            return back()->withInput()->with('error', "Terlalu banyak percobaan. Coba lagi dalam {$seconds} detik.");
+        if ($error = $launcher->throttle($request, AiTask::TYPE_RECOMMENDATION)) {
+            return back()->withInput()->with('error', $error);
         }
-
-        RateLimiter::hit($throttleKey, 60);
 
         $data = $request->validate([
             'interests' => ['nullable', 'array'],
@@ -47,24 +40,8 @@ class RecommendationController extends Controller
             'seharian' => 'Seharian (6+ jam)',
         ];
 
-        try {
-            $recommendations = $llm->recommend([
-                'interests' => $data['interests'] ?? [],
-                'notes' => $data['notes'] ?? null,
-                'budget_max' => $data['budget_max'] ?? null,
-                'duration' => $durationLabels[$data['duration'] ?? ''] ?? null,
-                'lat' => $data['lat'] ?? null,
-                'lng' => $data['lng'] ?? null,
-            ]);
-        } catch (RuntimeException $e) {
-            return back()->withInput()->with('error', $e->getMessage());
-        }
+        $data['duration_label'] = $durationLabels[$data['duration'] ?? ''] ?? null;
 
-        return view('recommendations.result', [
-            'recommendations' => $recommendations,
-            'preferences' => $data,
-            'lat' => $data['lat'] ?? null,
-            'lng' => $data['lng'] ?? null,
-        ]);
+        return $launcher->launch($request, AiTask::TYPE_RECOMMENDATION, $data);
     }
 }

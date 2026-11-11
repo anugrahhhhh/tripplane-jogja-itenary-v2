@@ -10,7 +10,7 @@
     </x-slot>
 
     <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <form action="{{ route('itineraries.store') }}" method="POST" class="lg:col-span-2 card p-6 sm:p-8 space-y-5">
+        <form action="{{ route('itineraries.store') }}" method="POST" data-warn-unsaved class="lg:col-span-2 card p-6 sm:p-8 space-y-5">
             @csrf
 
             <div>

@@ -47,6 +47,15 @@ return [
             'report' => false,
         ],
 
+        // Salinan backup kedua di luar server aplikasi: mount penyimpanan
+        // eksternal (NFS, disk terpisah, network drive) ke folder ini.
+        'offsite' => [
+            'driver' => 'local',
+            'root' => env('BACKUP_OFFSITE_ROOT', storage_path('app/offsite')),
+            'throw' => false,
+            'report' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),
