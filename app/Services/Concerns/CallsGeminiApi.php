@@ -2,6 +2,7 @@
 
 namespace App\Services\Concerns;
 
+use App\Support\CircuitBreaker;
 use GuzzleHttp\Exception\TransferException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Response;
@@ -33,6 +34,11 @@ trait CallsGeminiApi
      * sehingga pengguna tidak pernah menunggu lebih lama dari batas itu,
      * sementara model utama tetap mendapat waktu penuh per percobaan.
      *
+     * Circuit breaker "gemini": bila Gemini gagal (sibuk/timeout/5xx)
+     * beberapa kali berturut-turut, permintaan berikutnya langsung ditolak
+     * dengan pesan jelas selama masa cooldown, alih-alih membuat setiap
+     * pengguna menunggu sampai batas waktu habis.
+     *
      * @return array<string, mixed>
      */
     protected function requestGeminiJson(string $prompt, array $responseSchema): array
@@ -41,6 +47,14 @@ trait CallsGeminiApi
 
         if (! $apiKey) {
             throw new RuntimeException('GEMINI_API_KEY belum diatur di file .env.');
+        }
+
+        $breaker = CircuitBreaker::for('gemini');
+
+        if (! $breaker->allows()) {
+            $minutes = max(1, (int) ceil($breaker->retryAfter() / 60));
+
+            throw new RuntimeException("Layanan AI sedang mengalami gangguan. Silakan coba lagi sekitar {$minutes} menit lagi.");
         }
 
         $budget = $this->geminiTimeBudget();
@@ -75,6 +89,8 @@ trait CallsGeminiApi
             }
 
             if ($result->successful()) {
+                $breaker->recordSuccess();
+
                 return $this->decodeGeminiResponse($result);
             }
 
@@ -99,6 +115,13 @@ trait CallsGeminiApi
             'body_terakhir' => $lastResponse?->body(),
             'connection_error_terakhir' => $lastConnectionError?->getMessage(),
         ]);
+
+        // Hanya gangguan layanan (timeout, sibuk, 5xx) yang membuka sirkuit;
+        // kesalahan permintaan/kredensial (4xx lain) bukan soal ketersediaan.
+        $status = $lastResponse?->status();
+        if ($budgetExhausted || $lastConnectionError || in_array($status, [404, 429], true) || $status >= 500) {
+            $breaker->recordFailure();
+        }
 
         if ($budgetExhausted) {
             throw new RuntimeException('Server AI sedang lambat merespons. Coba lagi dalam beberapa saat.');

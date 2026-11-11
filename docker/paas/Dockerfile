@@ -20,9 +20,14 @@ FROM php:8.2-fpm AS paas
 RUN apt-get update && apt-get install -y --no-install-recommends \
         nginx git unzip libpng-dev libjpeg62-turbo-dev libfreetype6-dev \
         libonig-dev libxml2-dev libzip-dev libicu-dev \
+        default-mysql-client \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j"$(nproc)" pdo_mysql mbstring exif pcntl bcmath gd zip intl \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    && pecl install redis \
+    && docker-php-ext-enable redis \
+    && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/pear
+# default-mysql-client: mysqldump untuk `php artisan app:backup-database`.
+# redis: cache cepat bila platform menyediakan Redis (opsional).
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
@@ -42,6 +47,7 @@ RUN composer dump-autoload --optimize \
 COPY docker/php/local.ini /usr/local/etc/php/conf.d/local.ini
 COPY docker/paas/nginx.conf.template /etc/nginx/conf.d/app.conf.template
 RUN rm -f /etc/nginx/sites-enabled/default
+COPY docker/nginx/fallback.html /usr/share/nginx/fallback/fallback.html
 
 COPY docker/paas/start.sh /usr/local/bin/start.sh
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh

@@ -4,7 +4,7 @@
         <h1 class="mt-2 text-2xl sm:text-3xl font-extrabold text-ink">Tambah Destinasi</h1>
     </x-slot>
 
-    <form action="{{ route('admin.destinations.store') }}" method="POST" enctype="multipart/form-data" class="card p-6 sm:p-8 space-y-5 max-w-4xl">
+    <form action="{{ route('admin.destinations.store') }}" method="POST" enctype="multipart/form-data" data-warn-unsaved class="card p-6 sm:p-8 space-y-5 max-w-4xl">
         @csrf
         @include('admin.destinations._form')
 

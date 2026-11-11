@@ -5,9 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Itinerary;
 use App\Models\ItineraryItem;
 use App\Services\NearestNeighborSorter;
+use App\Support\Transaction;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class ItineraryItemController extends Controller
@@ -74,7 +74,7 @@ class ItineraryItemController extends Controller
 
         // Satu transaksi: kalau gagal di tengah, urutan lama tetap utuh
         // (tidak tersimpan setengah lama, setengah baru).
-        DB::transaction(function () use ($data, $itinerary) {
+        Transaction::run(function () use ($data, $itinerary) {
             foreach ($data['item_ids'] as $order => $itemId) {
                 ItineraryItem::where('id', $itemId)
                     ->where('itinerary_id', $itinerary->id)
@@ -109,7 +109,7 @@ class ItineraryItemController extends Controller
 
         $sorted = NearestNeighborSorter::sort($dayItems);
 
-        DB::transaction(function () use ($sorted) {
+        Transaction::run(function () use ($sorted) {
             foreach ($sorted->values() as $index => $item) {
                 $item->update(['sort_order' => $index]);
             }

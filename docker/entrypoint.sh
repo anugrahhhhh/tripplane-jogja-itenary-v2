@@ -35,11 +35,21 @@ until php artisan db:show --quiet > /dev/null 2>&1; do
     sleep 2
 done
 
-echo "[entrypoint] Menjalankan migrasi database..."
-php artisan migrate --force
+# Dengan banyak instance, hanya satu yang perlu menjalankan migrasi
+# (docker-compose: service "migrate"; instance lain RUN_MIGRATIONS=false).
+# --isolated mengunci lewat cache supaya dua instance yang kebetulan start
+# bersamaan (mis. replika PaaS) tidak menjalankan migrasi bersamaan.
+if [ "${RUN_MIGRATIONS:-true}" = "true" ]; then
+    echo "[entrypoint] Menjalankan migrasi database..."
+    # Fallback tanpa --isolated: pada database yang masih kosong tabel lock
+    # cache (cache_locks) belum ada, jadi kunci belum bisa dipakai.
+    php artisan migrate --force --isolated || php artisan migrate --force
 
-echo "[entrypoint] Mengisi data awal (kategori, destinasi, ulasan contoh)..."
-php artisan db:seed --force
+    echo "[entrypoint] Mengisi data awal (kategori, destinasi, ulasan contoh)..."
+    php artisan db:seed --force
+else
+    echo "[entrypoint] RUN_MIGRATIONS=false: migrasi dilewati (dijalankan instance lain)."
+fi
 
 php artisan storage:link --force || true
 

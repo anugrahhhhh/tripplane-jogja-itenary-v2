@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Notifications\Concerns\RetriesDelivery;
 use App\Support\OutboundUrl;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -12,8 +13,7 @@ use Illuminate\Support\Facades\URL;
 class TwoFactorEnabledNotification extends Notification implements ShouldQueue
 {
     use Queueable;
-
-    public int $tries = 3;
+    use RetriesDelivery;
 
     /**
      * @return array<int, string>

@@ -11,7 +11,7 @@
     </x-slot>
 
     <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <form action="{{ route('itineraries.update', $itinerary) }}" method="POST" class="card p-6 sm:p-8 space-y-5">
+        <form action="{{ route('itineraries.update', $itinerary) }}" method="POST" data-warn-unsaved class="card p-6 sm:p-8 space-y-5">
             @csrf
             @method('PUT')
 

@@ -17,6 +17,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="robots" content="noindex">
         <title>@yield('title') — JogjaTrip</title>
+        @yield('head')
         <link rel="icon" href="{{ url('/icons/icon-192.png') }}">
         <style>
             * { box-sizing: border-box; }

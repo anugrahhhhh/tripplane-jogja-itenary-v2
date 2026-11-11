@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Itinerary;
 use App\Notifications\ItineraryReminderNotification;
 use Illuminate\Console\Command;
+use Throwable;
 
 class SendItineraryReminders extends Command
 {
@@ -38,18 +39,37 @@ class SendItineraryReminders extends Command
             return self::SUCCESS;
         }
 
+        $failed = 0;
+
         foreach ($itineraries as $itinerary) {
-            $recipients = collect([$itinerary->user])
-                ->merge($itinerary->collaborators)
-                ->unique('id');
+            // Isolasi per itinerary: satu kegagalan (mis. data rusak, antrean
+            // gangguan) tidak menghentikan pengingat untuk itinerary lain.
+            // Itinerary yang gagal tidak ditandai terkirim, sehingga dicoba
+            // lagi pada jadwal berikutnya (tiap jam, lihat routes/console.php).
+            try {
+                $recipients = collect([$itinerary->user])
+                    ->merge($itinerary->collaborators)
+                    ->filter()
+                    ->unique('id');
 
-            foreach ($recipients as $recipient) {
-                $recipient->notify(new ItineraryReminderNotification($itinerary));
+                foreach ($recipients as $recipient) {
+                    $recipient->notify(new ItineraryReminderNotification($itinerary));
+                }
+
+                $itinerary->forceFill(['reminder_sent_at' => now()])->save();
+
+                $this->info('Pengingat terkirim: "'.$itinerary->title.'" ke '.$recipients->count().' orang.');
+            } catch (Throwable $e) {
+                $failed++;
+                report($e);
+                $this->error('Gagal mengirim pengingat "'.$itinerary->title.'": '.$e->getMessage());
             }
+        }
 
-            $itinerary->forceFill(['reminder_sent_at' => now()])->save();
+        if ($failed > 0) {
+            $this->warn("{$failed} itinerary gagal diproses dan akan dicoba lagi pada jadwal berikutnya.");
 
-            $this->info('Pengingat terkirim: "'.$itinerary->title.'" ke '.$recipients->count().' orang.');
+            return self::FAILURE;
         }
 
         return self::SUCCESS;

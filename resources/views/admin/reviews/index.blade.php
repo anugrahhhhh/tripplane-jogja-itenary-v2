@@ -46,7 +46,7 @@
                                 {{ $review->is_visible ? 'Sembunyikan' : 'Tampilkan' }}
                             </button>
                         </form>
-                        <form action="{{ route('admin.reviews.destroy', $review) }}" method="POST" onsubmit="return confirm('Hapus ulasan ini secara permanen?')">
+                        <form action="{{ route('admin.reviews.destroy', $review) }}" method="POST" data-confirm="Hapus ulasan ini secara permanen?" data-confirm-title="Hapus data?" data-confirm-button="Ya, hapus">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="btn-danger btn-sm">Hapus</button>
