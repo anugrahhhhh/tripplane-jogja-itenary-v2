@@ -93,12 +93,12 @@ php artisan test
 
 Proyek ini dibangun di atas framework [Laravel](https://laravel.com), yang bersifat open-source dengan lisensi MIT.
 
-## Tim Pengembang
-## Pembagian Tugas
-| Anggota | Peran |
-|---|---|
-| Anugrah Putra Al Fatih | Backend, keamanan (2FA), Docker & ketersediaan sistem |
-| Venessa Yumadila | Dokumentasi, reliability & maintainability |
-| Eunice Utomo | UI/UX, responsiveness & usability |
+## Tim Pengembang & Pembagian Tugas
 
+| Anggota | GitHub | Peran |
+|---|---|---|
+| Anugrah Putra Al Fatih | [@anugrahhhhh](https://github.com/anugrahhhhh) | Backend, keamanan (2FA), Docker & ketersediaan sistem |
+| Venessa Yumadila | [@nessyahra](https://github.com/nessyahra) | Dokumentasi, reliability & maintainability |
+| Eunice Utomo | [@euniceutomo](https://github.com/euniceutomo) | UI/UX, responsiveness & usability |
 
+Analisis atribut kualitas produk ada di [docs/ANALISIS-KUALITAS.md](docs/ANALISIS-KUALITAS.md).
