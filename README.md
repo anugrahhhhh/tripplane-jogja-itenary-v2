@@ -92,3 +92,10 @@ php artisan test
 ## Lisensi
 
 Proyek ini dibangun di atas framework [Laravel](https://laravel.com), yang bersifat open-source dengan lisensi MIT.
+
+## Tim Pengembang
+
+| Nama | GitHub |
+|---|---|
+| Anugrah Putra | [@anugrahhhhh](https://github.com/anugrahhhhh) |
+| Venessa Yumadila | [@nessyahra](https://github.com/nessyahra) |
