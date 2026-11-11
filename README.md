@@ -99,3 +99,5 @@ Proyek ini dibangun di atas framework [Laravel](https://laravel.com), yang bersi
 |---|---|
 | Anugrah Putra | [@anugrahhhhh](https://github.com/anugrahhhhh) |
 | Venessa Yumadila | [@nessyahra](https://github.com/nessyahra) |
+| Eunice Evelyn Pramesty Utomo | [@euniceutomo](https://github.com/euniceutomo) |
+
