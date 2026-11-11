@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Destination;
 use App\Services\DistanceService;
+use App\Support\Transaction;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class TodayItineraryController extends Controller
 {
@@ -54,7 +54,7 @@ class TodayItineraryController extends Controller
 
         // Satu transaksi: itinerary dan semua destinasinya tersimpan utuh,
         // atau tidak sama sekali kalau ada error di tengah jalan.
-        $itinerary = DB::transaction(function () use ($destinations, $today) {
+        $itinerary = Transaction::run(function () use ($destinations, $today) {
             $itinerary = auth()->user()->itineraries()->firstOrCreate(
                 ['type' => 'today', 'start_date' => $today, 'end_date' => $today],
                 ['title' => 'Itinerary Hari Ini - '.$today->translatedFormat('d F Y')]

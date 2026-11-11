@@ -8,13 +8,15 @@ use App\Models\Destination;
 use App\Models\Itinerary;
 use App\Models\Review;
 use App\Models\User;
+use App\Services\SystemHealth;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function index(): View
+    public function index(SystemHealth $health): View
     {
         return view('admin.dashboard', [
+            'systemHealth' => $health->report(),
             'totalDestinations' => Destination::count(),
             'totalCategories' => Category::count(),
             'totalTravelers' => User::where('role', 'traveler')->count(),

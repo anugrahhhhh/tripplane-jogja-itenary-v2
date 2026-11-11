@@ -37,7 +37,9 @@ class SecurityNotificationsTest extends TestCase
 
         foreach ($this->notifications() as $name => [$notification]) {
             $this->assertInstanceOf(ShouldQueue::class, $notification, $name);
-            $this->assertSame(3, $notification->tries, $name);
+            // Dicoba ulang dengan jeda bertahap (RetriesDelivery).
+            $this->assertSame(5, $notification->tries, $name);
+            $this->assertSame([30, 120, 600, 1800], $notification->backoff(), $name);
             $this->assertSame(['database', 'mail'], $notification->via($user), $name);
             $this->assertNotEmpty($notification->toArray($user)['message'], $name);
         }

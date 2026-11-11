@@ -55,6 +55,12 @@ return [
     'url' => env('APP_URL', 'http://localhost'),
 
     /*
+    | Token untuk melihat detail /health (untuk uptime monitor). Tanpa token,
+    | /health hanya menjawab status ringkas. Admin yang login selalu bisa.
+    */
+    'health_token' => env('HEALTH_TOKEN'),
+
+    /*
     |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------

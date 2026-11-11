@@ -61,7 +61,22 @@ return [
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 (PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
+                // Gagal cepat bila server DB tidak menjawab, daripada request menggantung.
+                PDO::ATTR_TIMEOUT => (int) env('DB_CONNECT_TIMEOUT', 5),
             ]) : [],
+            // Opsional (availability): replika baca. Isi DB_READ_HOST (boleh
+            // beberapa host, pisahkan koma) supaya query baca tersebar dan
+            // halaman tetap bisa dibaca saat primary sibuk. "sticky" menjaga
+            // data yang baru ditulis langsung terbaca di request yang sama.
+            ...(env('DB_READ_HOST') ? [
+                'read' => [
+                    'host' => array_map('trim', explode(',', (string) env('DB_READ_HOST'))),
+                    // Replika mati -> pindah ke host berikutnya dalam 1 detik.
+                    'options' => extension_loaded('pdo_mysql') ? [PDO::ATTR_TIMEOUT => (int) env('DB_READ_CONNECT_TIMEOUT', 1)] : [],
+                ],
+                'write' => ['host' => [env('DB_HOST', '127.0.0.1')]],
+                'sticky' => true,
+            ] : []),
         ],
 
         'mariadb' => [
@@ -160,6 +175,8 @@ return [
             'password' => env('REDIS_PASSWORD'),
             'port' => env('REDIS_PORT', '6379'),
             'database' => env('REDIS_DB', '0'),
+            'timeout' => (float) env('REDIS_TIMEOUT', 0.5),
+            'read_timeout' => (float) env('REDIS_READ_TIMEOUT', 1),
             'max_retries' => env('REDIS_MAX_RETRIES', 3),
             'backoff_algorithm' => env('REDIS_BACKOFF_ALGORITHM', 'decorrelated_jitter'),
             'backoff_base' => env('REDIS_BACKOFF_BASE', 100),
@@ -173,7 +190,11 @@ return [
             'password' => env('REDIS_PASSWORD'),
             'port' => env('REDIS_PORT', '6379'),
             'database' => env('REDIS_CACHE_DB', '1'),
-            'max_retries' => env('REDIS_MAX_RETRIES', 3),
+            // Resilience: Redis mati harus cepat terdeteksi supaya cache
+            // "failover" segera pindah ke database, bukan menggantung.
+            'timeout' => (float) env('REDIS_TIMEOUT', 0.5),
+            'read_timeout' => (float) env('REDIS_READ_TIMEOUT', 1),
+            'max_retries' => env('REDIS_CACHE_MAX_RETRIES', 0),
             'backoff_algorithm' => env('REDIS_BACKOFF_ALGORITHM', 'decorrelated_jitter'),
             'backoff_base' => env('REDIS_BACKOFF_BASE', 100),
             'backoff_cap' => env('REDIS_BACKOFF_CAP', 1000),

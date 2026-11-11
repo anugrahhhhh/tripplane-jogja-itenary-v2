@@ -129,7 +129,7 @@
                                                 </div>
                                                 <div class="flex items-center gap-1.5">
                                                     <button type="button" @click="editing = ! editing" :aria-expanded="editing" class="text-xs font-semibold text-ink/60 border border-primary-100 rounded-full px-3 py-1 hover:bg-primary-50 hover:text-primary-700 transition" :class="editing && 'bg-primary-50 text-primary-700'">Atur waktu</button>
-                                                    <form action="{{ route('itinerary-items.destroy', $item) }}" method="POST" onsubmit="return confirm('Hapus destinasi ini dari itinerary?')">
+                                                    <form action="{{ route('itinerary-items.destroy', $item) }}" method="POST" data-confirm="Hapus destinasi ini dari itinerary?" data-confirm-title="Hapus data?" data-confirm-button="Ya, hapus">
                                                         @csrf
                                                         @method('DELETE')
                                                         <button type="submit" class="text-xs font-semibold text-red-500 border border-red-100 rounded-full px-3 py-1 hover:bg-red-50 transition">Hapus</button>
@@ -309,7 +309,7 @@
                                     </div>
                                     @if ($isOwner || $collaborator->id === auth()->id())
                                         <form action="{{ route('itinerary-collaborators.destroy', [$itinerary, $collaborator]) }}" method="POST"
-                                              onsubmit="return confirm('{{ $collaborator->id === auth()->id() ? 'Keluar dari itinerary ini?' : 'Keluarkan '.$collaborator->name.' dari kolaborator?' }}')">
+                                              data-confirm="{{ $collaborator->id === auth()->id() ? 'Keluar dari itinerary ini?' : 'Keluarkan '.$collaborator->name.' dari kolaborator?' }}">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="text-xs font-semibold text-red-500 hover:underline shrink-0">
@@ -351,7 +351,7 @@
                                 </div>
                                 <p x-show="failed" x-cloak class="mt-1.5 text-xs text-amber-600">Salin manual: tekan Ctrl+C pada link yang terpilih.</p>
                                 <div class="mt-3 flex flex-wrap gap-2">
-                                    <form action="{{ route('itineraries.share.store', $itinerary) }}" method="POST" onsubmit="return confirm('Link lama tidak akan bisa dibuka lagi. Lanjutkan?')">
+                                    <form action="{{ route('itineraries.share.store', $itinerary) }}" method="POST" data-confirm="Link lama tidak akan bisa dibuka lagi. Lanjutkan?">
                                         @csrf
                                         <button type="submit" class="btn-secondary btn-sm py-2">Buat link baru</button>
                                     </form>

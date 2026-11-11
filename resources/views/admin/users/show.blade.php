@@ -21,7 +21,7 @@
         </span>
         @if (! auth()->user()->is($user))
             <form method="POST" action="{{ route('admin.users.reset-two-factor', $user) }}"
-                  onsubmit="return confirm('Reset 2FA pengguna ini? Mereka harus mengaturnya ulang saat login berikutnya.')">
+                  data-confirm="Reset 2FA pengguna ini? Mereka harus mengaturnya ulang saat login berikutnya.">
                 @csrf
                 <button type="submit" class="btn-danger btn-sm">Reset 2FA</button>
             </form>

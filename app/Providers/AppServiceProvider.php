@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Destination;
 use App\Models\DestinationPhoto;
 use App\Models\Review;
+use App\Services\SystemHealth;
 use App\Support\CatalogCache;
 use App\Support\OutboundUrl;
 use Illuminate\Auth\Notifications\ResetPassword;
@@ -14,6 +15,7 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
@@ -44,6 +46,9 @@ class AppServiceProvider extends ServiceProvider
         $this->configureRateLimiting();
         $this->configureOutboundEmailUrls();
         $this->configurePasswordRules();
+
+        // Detak jantung worker queue untuk /health (dibatasi 1x per 30 detik).
+        Queue::looping(fn () => SystemHealth::beatQueueWorker());
     }
 
     /**

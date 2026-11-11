@@ -44,6 +44,8 @@
         @endforeach
     </div>
 
+    @include('admin.partials.system-health', ['health' => $systemHealth])
+
     <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="card p-6">
             <div class="flex items-center justify-between">

@@ -1,7 +1,11 @@
 {{-- Field kata sandi dengan tombol tampilkan/sembunyikan. Semua atribut diteruskan ke <input>. --}}
+@php
+    $errorKey = (string) $attributes->get('name');
+    $invalid = $errorKey !== '' && isset($errors) && $errors->has($errorKey);
+@endphp
 <div class="relative" x-data="{ show: false }">
-    <input type="password" x-bind:type="show ? 'text' : 'password'"
-        {{ $attributes->merge(['class' => 'w-full rounded-xl border-primary-100 bg-white text-ink placeholder:text-ink/40 shadow-sm pr-11 focus:border-primary-400 focus:ring-4 focus:ring-primary-500/10']) }}>
+    <input type="password" x-bind:type="show ? 'text' : 'password'" @if ($invalid) aria-invalid="true" @endif
+        {{ $attributes->merge(['class' => 'w-full rounded-xl bg-white text-ink placeholder:text-ink/40 shadow-sm pr-11 focus:ring-4 '.($invalid ? 'border-red-300 focus:border-red-400 focus:ring-red-500/10' : 'border-primary-100 focus:border-primary-400 focus:ring-primary-500/10')]) }}>
     <button type="button" @click="show = ! show" :aria-label="show ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'"
             class="absolute inset-y-0 right-0 px-3.5 flex items-center text-ink/40 hover:text-primary-700">
         <svg x-show="! show" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
