@@ -4,13 +4,15 @@ Dokumen ini memetakan tujuh atribut kualitas produk perangkat lunak (Security, R
 
 | Atribut | Status | Penanggung jawab presentasi |
 |---|---|---|
-| Security | Kuat | Anugrah |
+| Security | Kuat | Jose |
 | Availability | Kuat | Anugrah |
 | Resilience | Sangat kuat | Anugrah |
 | Reliability | Kuat | Venessa |
 | Maintainability | Kuat | Venessa |
 | Responsiveness | Kuat | Eunice |
 | Usability | Kuat | Eunice |
+
+Demo aplikasi (alur login 2FA, susun itinerary dengan AI, dashboard admin) dibawakan oleh Jose.
 
 ---
 
