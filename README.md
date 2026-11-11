@@ -95,10 +95,11 @@ Proyek ini dibangun di atas framework [Laravel](https://laravel.com), yang bersi
 
 ## Tim Pengembang & Pembagian Tugas
 
-| Anggota | GitHub | Peran |
-|---|---|---|
-| Anugrah Putra Al Fatih | [@anugrahhhhh](https://github.com/anugrahhhhh) | Backend, keamanan (2FA), Docker & ketersediaan sistem |
-| Venessa Yumadila | [@nessyahra](https://github.com/nessyahra) | Dokumentasi, reliability & maintainability |
-| Eunice Utomo | [@euniceutomo](https://github.com/euniceutomo) | UI/UX, responsiveness & usability |
+| Anggota | GitHub | Peran | Bagian presentasi |
+|---|---|---|---|
+| Anugrah Putra Al Fatih | [@anugrahhhhh](https://github.com/anugrahhhhh) | Backend, keamanan (2FA), Docker & ketersediaan sistem | Availability, Resilience |
+| Venessa Yumadila | [@nessyahra](https://github.com/nessyahra) | Dokumentasi, reliability & maintainability | Reliability, Maintainability |
+| Eunice Utomo | [@euniceutomo](https://github.com/euniceutomo) | UI/UX, responsiveness & usability | Responsiveness, Usability |
+| Jose | [@Josealito](https://github.com/Josealito) | Security & demo aplikasi | Security, demo aplikasi |
 
 Analisis atribut kualitas produk ada di [docs/ANALISIS-KUALITAS.md](docs/ANALISIS-KUALITAS.md).
