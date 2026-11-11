@@ -38,5 +38,6 @@
         @auth
             @include('partials.idle-timeout')
         @endauth
+        @include('partials.ux')
     </body>
 </html>

@@ -48,5 +48,6 @@
 
             <a href="{{ route('home') }}" class="relative text-sm text-ink/50 hover:text-primary-700">&larr; Kembali ke Beranda</a>
         </div>
+        @include('partials.ux')
     </body>
 </html>

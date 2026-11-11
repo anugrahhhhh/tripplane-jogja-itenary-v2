@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AiItineraryController;
+use App\Http\Controllers\AiTaskController;
 use App\Http\Controllers\DestinationController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\HomeController;
@@ -34,6 +35,17 @@ Route::get('/terdekat/cari', [NearbyController::class, 'search'])->name('nearby.
 
 Route::get('/rekomendasi-ai', [RecommendationController::class, 'create'])->name('recommendations.create');
 Route::post('/rekomendasi-ai', [RecommendationController::class, 'store'])->name('recommendations.store');
+
+// Progres & hasil permintaan AI yang diproses di latar belakang (queue).
+// Terbuka untuk tamu karena rekomendasi AI tidak wajib login; kepemilikan
+// dicek per task (user_id atau sesi tamu).
+Route::prefix('/ai/proses/{aiTask}')->whereUuid('aiTask')->name('ai-tasks.')->group(function () {
+    Route::get('/', [AiTaskController::class, 'show'])->name('show');
+    Route::get('/status', [AiTaskController::class, 'status'])->middleware('throttle:120,1')->name('status');
+    Route::get('/hasil', [AiTaskController::class, 'result'])->name('result');
+    Route::post('/ulang', [AiTaskController::class, 'retry'])->name('retry');
+    Route::get('/ubah', [AiTaskController::class, 'edit'])->name('edit');
+});
 
 // Bawaan Breeze: tidak dipakai sebagai halaman tersendiri, cukup diarahkan ke Beranda.
 Route::get('/dashboard', fn () => redirect()->route('home'))

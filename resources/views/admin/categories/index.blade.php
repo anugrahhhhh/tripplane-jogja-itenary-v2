@@ -39,7 +39,7 @@
                             <td class="text-right whitespace-nowrap">
                                 <div class="inline-flex items-center gap-1.5">
                                     <a href="{{ route('admin.categories.edit', $category) }}" class="btn-secondary btn-sm">Ubah</a>
-                                    <form action="{{ route('admin.categories.destroy', $category) }}" method="POST" class="inline" onsubmit="return confirm('Hapus kategori ini?')">
+                                    <form action="{{ route('admin.categories.destroy', $category) }}" method="POST" class="inline" data-confirm="Hapus kategori ini?" data-confirm-title="Hapus data?" data-confirm-button="Ya, hapus">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn-danger btn-sm">Hapus</button>

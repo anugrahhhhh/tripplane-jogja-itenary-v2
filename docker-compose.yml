@@ -1,88 +1,161 @@
+# Topologi high-availability (satu host Docker):
+#
+#   nginx ──► app1 ┐                 ┌─► db (MySQL primary, tulis + baca)
+#         └─► app2 ┴─► redis (cache) ┤
+#   queue, queue-ai, scheduler ──────┘   db-replica (replika baca, GTID)
+#
+# - Dua instance app: satu mati/restart, Nginx otomatis memakai yang lain.
+# - Replika baca: query SELECT tersebar ke replica + primary; bila replica
+#   mati, Laravel otomatis membaca dari primary.
+# - Migrasi hanya dijalankan service "migrate" (sekali, sebelum app start).
+# - Backup harian ditulis ke dua lokasi: backup_data dan backup_offsite_data
+#   (ganti backup_offsite_data dengan mount NFS/disk lain di produksi).
+
+x-php-env: &php-env
+  # Alamat IP tetap (bukan nama container): nama container yang sedang mati
+  # diteruskan Docker ke DNS luar dan baru gagal setelah ~4 detik. Dengan IP,
+  # komponen yang mati terdeteksi dalam batas timeout (0,5-1 detik).
+  DB_HOST: 10.250.77.11
+  DB_PORT: 3306
+  # Replika dulu, primary sebagai cadangan baca.
+  DB_READ_HOST: 10.250.77.12,10.250.77.11
+  REDIS_HOST: 10.250.77.10
+  REDIS_CLIENT: phpredis
+  # Cache di Redis, otomatis pindah ke database bila Redis mati.
+  CACHE_STORE: failover
+  CACHE_FAILOVER_STORES: redis,database
+  RUN_MIGRATIONS: "false"
+  BACKUP_DISKS: local,offsite
+  BACKUP_OFFSITE_ROOT: /var/www/html/storage/app/offsite
+  # Mode perawatan dibagi lewat cache: `php artisan down` di satu instance
+  # berlaku untuk semua instance.
+  APP_MAINTENANCE_DRIVER: cache
+  APP_MAINTENANCE_STORE: failover
+
+x-php-service: &php-service
+  build:
+    context: .
+    dockerfile: Dockerfile
+    target: php_base
+  restart: unless-stopped
+  env_file:
+    - .env.docker
+  environment:
+    <<: *php-env
+  volumes:
+    - storage_data:/var/www/html/storage/app/public
+    - backup_data:/var/www/html/storage/app/private/backups
+    - backup_offsite_data:/var/www/html/storage/app/offsite
+  depends_on:
+    db:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+    migrate:
+      condition: service_completed_successfully
+  networks:
+    - jogjatrip
+
+x-app-healthcheck: &app-healthcheck
+  test: ["CMD", "php", "artisan", "app:health"]
+  interval: 30s
+  timeout: 15s
+  retries: 3
+  start_period: 60s
+
 services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: php_base
-    container_name: jogjatrip_app
-    restart: unless-stopped
-    env_file:
-      - .env.docker
+  # Sekali jalan: migrasi + seed, lalu selesai. Instance lain menunggu ini.
+  migrate:
+    <<: *php-service
+    restart: "no"
     environment:
-      DB_HOST: db
-      DB_PORT: 3306
-    volumes:
-      - storage_data:/var/www/html/storage/app/public
+      <<: *php-env
+      RUN_MIGRATIONS: "true"
+    command: ["php", "artisan", "--version"]
     depends_on:
       db:
         condition: service_healthy
-    networks:
-      - jogjatrip
+      redis:
+        condition: service_healthy
+
+  app1:
+    <<: *php-service
+    healthcheck: *app-healthcheck
+    stop_grace_period: 30s
+
+  app2:
+    <<: *php-service
+    healthcheck: *app-healthcheck
+    stop_grace_period: 30s
 
   nginx:
     build:
       context: .
       dockerfile: Dockerfile
       target: nginx_server
-    container_name: jogjatrip_nginx
     restart: unless-stopped
     ports:
       - "8000:80"
     volumes:
       - storage_data:/var/www/html/storage/app/public:ro
     depends_on:
-      - app
+      app1:
+        condition: service_started
+      app2:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/up"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
     networks:
       - jogjatrip
 
+  # Jadwal: pengingat, backup harian, heartbeat, peringatan kesehatan, pembersihan.
   scheduler:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: php_base
-    container_name: jogjatrip_scheduler
-    restart: unless-stopped
-    entrypoint: []
-    command: ["sh", "-c", "sleep 15 && php artisan schedule:work"]
-    env_file:
-      - .env.docker
-    environment:
-      DB_HOST: db
-      DB_PORT: 3306
-    volumes:
-      - storage_data:/var/www/html/storage/app/public
-    depends_on:
-      db:
-        condition: service_healthy
-    networks:
-      - jogjatrip
+    <<: *php-service
+    command: ["php", "artisan", "schedule:work"]
+    stop_grace_period: 60s
 
+  # Worker umum (notifikasi email). Antrean "ai" ikut diambil bila worker AI sibuk.
   queue:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: php_base
-    container_name: jogjatrip_queue
+    <<: *php-service
+    command: ["php", "artisan", "queue:work", "--queue=default,ai", "--tries=3", "--backoff=30", "--max-time=3600"]
+    # SIGTERM: worker menyelesaikan job yang sedang berjalan sebelum berhenti.
+    stop_grace_period: 60s
+
+  # Worker khusus AI supaya permintaan AI yang lama tidak menahan email/notifikasi.
+  queue-ai:
+    <<: *php-service
+    command: ["php", "artisan", "queue:work", "--queue=ai", "--max-time=3600"]
+    stop_grace_period: 180s
+
+  redis:
+    image: redis:7-alpine
     restart: unless-stopped
-    entrypoint: []
-    command: ["sh", "-c", "sleep 15 && php artisan queue:work --tries=3 --backoff=30"]
-    env_file:
-      - .env.docker
-    environment:
-      DB_HOST: db
-      DB_PORT: 3306
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
     volumes:
-      - storage_data:/var/www/html/storage/app/public
-    depends_on:
-      db:
-        condition: service_healthy
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
     networks:
-      - jogjatrip
+      jogjatrip:
+        ipv4_address: 10.250.77.10
 
   db:
     image: mysql:8.0
-    container_name: jogjatrip_db
     restart: unless-stopped
+    # Binlog + GTID: syarat replikasi ke db-replica.
+    command:
+      - --server-id=1
+      - --log-bin=mysql-bin
+      - --binlog-format=ROW
+      - --gtid-mode=ON
+      - --enforce-gtid-consistency=ON
+      - --binlog-expire-logs-seconds=604800
     environment:
       MYSQL_DATABASE: jogjatrip
       MYSQL_USER: jogjatrip
@@ -96,12 +169,68 @@ services:
       timeout: 5s
       retries: 20
     networks:
+      jogjatrip:
+        ipv4_address: 10.250.77.11
+
+  db-replica:
+    image: mysql:8.0
+    restart: unless-stopped
+    command:
+      - --server-id=2
+      - --log-bin=mysql-bin
+      - --relay-log=relay-bin
+      - --gtid-mode=ON
+      - --enforce-gtid-consistency=ON
+      - --log-replica-updates=ON
+      # Pengguna biasa tidak bisa menulis; thread replikasi tetap bisa.
+      - --read-only=ON
+    environment:
+      MYSQL_ROOT_PASSWORD: jogjatrip_root_secret
+    volumes:
+      - db_replica_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pjogjatrip_root_secret"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      jogjatrip:
+        ipv4_address: 10.250.77.12
+
+  # Sekali jalan (idempoten): bangun & sambungkan replikasi db -> db-replica.
+  db-replica-setup:
+    image: mysql:8.0
+    restart: on-failure
+    entrypoint: ["sh", "/setup-replica.sh"]
+    environment:
+      MYSQL_ROOT_PASSWORD: jogjatrip_root_secret
+      DB_DATABASE: jogjatrip
+      DB_USERNAME: jogjatrip
+      DB_PASSWORD: jogjatrip_secret
+      REPLICATION_PASSWORD: jogjatrip_repl_secret
+    volumes:
+      - ./docker/mysql/setup-replica.sh:/setup-replica.sh:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      db-replica:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    networks:
       - jogjatrip
 
 volumes:
   db_data:
+  db_replica_data:
   storage_data:
+  backup_data:
+  backup_offsite_data:
+  redis_data:
 
 networks:
   jogjatrip:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 10.250.77.0/24

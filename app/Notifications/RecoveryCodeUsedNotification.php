@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Notifications\Concerns\RetriesDelivery;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -10,8 +11,7 @@ use Illuminate\Notifications\Notification;
 class RecoveryCodeUsedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
-
-    public int $tries = 3;
+    use RetriesDelivery;
 
     public function __construct(protected int $remaining) {}
 

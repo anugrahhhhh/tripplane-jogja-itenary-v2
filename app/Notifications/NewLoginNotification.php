@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Notifications\Concerns\RetriesDelivery;
 use App\Support\OutboundUrl;
 use Carbon\CarbonInterface;
 use Illuminate\Bus\Queueable;
@@ -13,8 +14,7 @@ use Illuminate\Support\Facades\URL;
 class NewLoginNotification extends Notification implements ShouldQueue
 {
     use Queueable;
-
-    public int $tries = 3;
+    use RetriesDelivery;
 
     public function __construct(
         protected string $ipAddress,

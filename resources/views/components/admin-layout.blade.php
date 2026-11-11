@@ -136,5 +136,6 @@
         @endif
 
         @include('partials.idle-timeout')
+        @include('partials.ux')
     </body>
 </html>
