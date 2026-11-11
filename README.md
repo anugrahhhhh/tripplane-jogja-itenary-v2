@@ -94,10 +94,11 @@ php artisan test
 Proyek ini dibangun di atas framework [Laravel](https://laravel.com), yang bersifat open-source dengan lisensi MIT.
 
 ## Tim Pengembang
-
-| Nama | GitHub |
+## Pembagian Tugas
+| Anggota | Peran |
 |---|---|
-| Anugrah Putra | [@anugrahhhhh](https://github.com/anugrahhhhh) |
-| Venessa Yumadila | [@nessyahra](https://github.com/nessyahra) |
-| Eunice Evelyn Pramesty Utomo | [@euniceutomo](https://github.com/euniceutomo) |
+| Anugrah Putra Al Fatih | Backend, keamanan (2FA), Docker & ketersediaan sistem |
+| Venessa Yumadila | Dokumentasi, reliability & maintainability |
+| Eunice Utomo | UI/UX, responsiveness & usability |
+
 
