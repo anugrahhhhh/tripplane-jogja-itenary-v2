@@ -16,8 +16,8 @@ Demo aplikasi (alur login 2FA, susun itinerary dengan AI, dashboard admin) dibaw
 
 Setiap bagian di bawah mencantumkan **commit terkait** yang menjadi bahan penjelasan atribut tersebut (lihat dengan `git show <hash>`). Dua commit besar mencakup beberapa atribut sekaligus, sehingga muncul di lebih dari satu bagian:
 
-- `00c1fea` *harden quality attributes* → Security, Reliability, Maintainability, Responsiveness, Usability
-- `d6b1897` *strengthen availability, resilience, responsiveness and usability* → Availability, Resilience, Responsiveness, Usability
+- `02c69eb` *harden quality attributes* → Security, Reliability, Maintainability, Responsiveness, Usability
+- `2d20709` *strengthen availability, resilience, responsiveness and usability* → Availability, Resilience, Responsiveness, Usability
 
 ---
 
@@ -36,15 +36,15 @@ Setiap bagian di bawah mencantumkan **commit terkait** yang menjadi bahan penjel
 | Dialog konfirmasi aman dari injeksi JavaScript | `resources/js/ux.js` (atribut `data-confirm`) |
 
 **Commit terkait (Jose):**
-- 2FA: `84ee034` kolom TOTP & service, `447c420` perangkat tepercaya, `d1a8fa3` setup TOTP wajib, `674c2c2` TwoFactorGate & challenge, `eaba215` login admin/Google lewat 2FA
-- Notifikasi & "Bukan saya": `0920dd8`, `bd85c56`, `40799c3`, `a2f1b9d`
-- Pengamanan token & recovery code: `7abe915`, `0726103`; reset 2FA oleh admin: `491bdd5`, `7fedc5d`
-- Auto-logout idle: `18a354a`
-- Password & kunci aplikasi: `502298a` rehash password, `319cd38` tolak APP_KEY otomatis di production
-- Cache halaman sensitif: `bd50731`, `4aafcda`, `0b7f7d6`
-- Library rawan: `607cd95`
-- `00c1fea` bagian Security (OutboundUrl, SecurityHeaders, rate limit daftar/reset password)
-- README: `2889ef9`
+- 2FA: `ea0aaf2` kolom TOTP & service, `7b89584` perangkat tepercaya, `c564549` setup TOTP wajib, `5131127` TwoFactorGate & challenge, `0eb1614` login admin/Google lewat 2FA
+- Notifikasi & "Bukan saya": `4541b68`, `6f921ad`, `d7c7350`, `b687060`
+- Pengamanan token & recovery code: `8a1d85c`, `ffee2e0`; reset 2FA oleh admin: `9b4e4c0`, `46b95f8`
+- Auto-logout idle: `fc6c7af`
+- Password & kunci aplikasi: `74e971d` rehash password, `9c7266c` tolak APP_KEY otomatis di production
+- Cache halaman sensitif: `d9f514b`, `177024e`, `9b65217`
+- Library rawan: `0b8558d`
+- `02c69eb` bagian Security (OutboundUrl, SecurityHeaders, rate limit daftar/reset password)
+- README: `0a0e3d3`
 
 **Keterbatasan:** CSP untuk `script-src` masih longgar karena masih ada script inline di view.
 
@@ -64,10 +64,10 @@ Setiap bagian di bawah mencantumkan **commit terkait** yang menjadi bahan penjel
 **Uji nyata (chaos test):** app1 dimatikan → web tetap 200; app1 + app2 dimatikan → halaman cadangan; Redis + replika dimatikan → web tetap 200 (~1 detik); semua dinyalakan → pulih sendiri.
 
 **Commit terkait (Anugrah):**
-- Fondasi & Docker: `0da864b` first commit, `d857657` Docker (app, nginx, MySQL, scheduler), `0c344c7` queue worker & syarat deploy
-- Deploy cloud: `accda8d` PaaS Railway + panduan IaaS/PaaS, `23e665f` script VM IaaS, `a60ecca` laporan & slide cloud computing
-- `d6b1897` bagian Availability (2 instance + failover Nginx, fallback.html, replika MySQL, `/health`, HealthAlerter, backup & restore)
-- Integrasi: `0198dd3` merge PR #1 (2FA), `18f338d` merge PR #2 (paket 1), `9d67302` merge branch availability
+- Fondasi & Docker: `0da864b` first commit, `d857657` Docker (app, nginx, MySQL, scheduler), `65bc548` queue worker & syarat deploy
+- Deploy cloud: `6f28fd8` PaaS Railway + panduan IaaS/PaaS, `73c970f` script VM IaaS, `76a6fe9` laporan & slide cloud computing
+- `2d20709` bagian Availability (2 instance + failover Nginx, fallback.html, replika MySQL, `/health`, HealthAlerter, backup & restore)
+- Integrasi: `15bfc4e` merge PR #1 (2FA), `3ea7daa` merge PR #2 (paket 1), `b05699d` merge branch availability
 
 **Keterbatasan:** semua container berjalan di satu mesin; bila database primary rusak total, pemulihan masih manual (restore dari backup).
 
@@ -86,8 +86,8 @@ Setiap bagian di bawah mencantumkan **commit terkait** yang menjadi bahan penjel
 | Pengingat H-1 terisolasi per itinerary dan dicoba ulang tiap jam | `app/Console/Commands/SendItineraryReminders.php` |
 
 **Commit terkait (Anugrah):**
-- `d6b1897` bagian Resilience (CircuitBreaker, cuaca *stale-if-error*, failover Redis, DatabaseOutage 503, retry deadlock & email, pengingat H-1)
-- `00c1fea` batas waktu total + model cadangan Gemini (`CallsGeminiApi`)
+- `2d20709` bagian Resilience (CircuitBreaker, cuaca *stale-if-error*, failover Redis, DatabaseOutage 503, retry deadlock & email, pengingat H-1)
+- `02c69eb` batas waktu total + model cadangan Gemini (`CallsGeminiApi`)
 
 ## 4. Reliability
 
@@ -103,9 +103,9 @@ Setiap bagian di bawah mencantumkan **commit terkait** yang menjadi bahan penjel
 | Pengaman agar test tidak menghapus database development | `tests/TestCase.php` |
 
 **Commit terkait (Venessa):**
-- Validasi hari tutup destinasi: `5f68bd5`, `773d302`
-- `00c1fea` bagian Reliability (transaksi DB untuk urutkan itinerary & "Itinerary Hari Ini", 80+ test baru)
-- `02da314` test menolak berjalan di database non-test
+- Validasi hari tutup destinasi: `4138386`, `4863239`
+- `02c69eb` bagian Reliability (transaksi DB untuk urutkan itinerary & "Itinerary Hari Ini", 80+ test baru)
+- `eb70cb7` test menolak berjalan di database non-test
 
 **Keterbatasan:** grafik dashboard admin memakai fungsi khusus MySQL sehingga tidak ikut diuji di SQLite.
 
@@ -121,10 +121,10 @@ Setiap bagian di bawah mencantumkan **commit terkait** yang menjadi bahan penjel
 | Dokumentasi UML (PlantUML) dan panduan operasional | `docs/uml-plantuml/`, `docs/deployment/AVAILABILITY.md` |
 
 **Commit terkait (Venessa):**
-- `00c1fea` bagian Maintainability (CI GitHub Actions + Pint, hapus file tak terpakai)
-- Design spec & rencana implementasi: `4860d87`, `cefda2e`, `ac5b9f1`, `c35c3d4`
-- Diagram UML: `21c7d8d`, `64fb0f5`
-- Dokumentasi: `4c0f684` analisis kualitas, `8bf376d` & `7aad985` pembagian tugas, `a4fcbbb` README
+- `02c69eb` bagian Maintainability (CI GitHub Actions + Pint, hapus file tak terpakai)
+- Design spec & rencana implementasi: `366eeb7`, `b1261a6`, `815ddc6`, `0923313`
+- Diagram UML: `a92b143`, `ba93798`
+- Dokumentasi: `4623737` analisis kualitas, `e07d69a` & `05ec017` pembagian tugas, `30ba41a` README
 
 **Keterbatasan:** belum ada analisis statis (PHPStan) dan laporan *coverage*; infrastruktur Docker kini lebih banyak komponen yang harus dirawat.
 
@@ -141,9 +141,9 @@ Setiap bagian di bawah mencantumkan **commit terkait** yang menjadi bahan penjel
 | Kompresi gzip dan cache permanen aset CSS/JS | `docker/nginx/app.conf` |
 
 **Commit terkait (Eunice):**
-- `d6b1897` bagian Responsiveness (antrean AI + halaman progres, index database, gzip & cache aset)
-- `00c1fea` bagian Performance (CatalogCache, perbaikan N+1 favorit, paginasi ulasan, lazy-load gambar)
-- Dokumentasi: `8336e5e`, `578e694` penjelasan Responsiveness & Usability
+- `2d20709` bagian Responsiveness (antrean AI + halaman progres, index database, gzip & cache aset)
+- `02c69eb` bagian Performance (CatalogCache, perbaikan N+1 favorit, paginasi ulasan, lazy-load gambar)
+- Dokumentasi: `47c7d66`, `24dadb5` penjelasan Responsiveness & Usability
 
 **Keterbatasan:** waktu proses AI tetap 5–50 detik tergantung layanan Gemini.
 
@@ -162,12 +162,12 @@ Setiap bagian di bawah mencantumkan **commit terkait** yang menjadi bahan penjel
 | Responsif di HP, bisa dipasang sebagai PWA | `public/sw.js`, `manifest.json` |
 
 **Commit terkait (Eunice):**
-- `d6b1897` bagian Usability (dialog konfirmasi aksesibel, submit lock, `aria-invalid`, banner offline)
-- `00c1fea` bagian Usability (terjemahan Bahasa Indonesia, halaman error ramah, label form)
-- Peringatan idle yang jelas: `4910d16`, `a5a1672`, `80843f9`, `11c531a`, `f63ce2a`
-- Profil keamanan & banner recovery code: `244ca5e`
-- Fitur itinerary: `89dffc3` & `4ba6d0a` estimasi biaya tiket, `8df1a56` & `d8aabdd` link share
-- README: `42fbb8a`
+- `2d20709` bagian Usability (dialog konfirmasi aksesibel, submit lock, `aria-invalid`, banner offline)
+- `02c69eb` bagian Usability (terjemahan Bahasa Indonesia, halaman error ramah, label form)
+- Peringatan idle yang jelas: `0076095`, `2eb9c3e`, `5ca0f25`, `46537cf`, `21d4927`
+- Profil keamanan & banner recovery code: `0839947`
+- Fitur itinerary: `2809079` & `b71fc58` estimasi biaya tiket, `d588191` & `b172cb0` link share
+- README: `7e9fd6a`
 
 **Keterbatasan:** belum diuji dengan pengguna nyata atau audit Lighthouse.
 
