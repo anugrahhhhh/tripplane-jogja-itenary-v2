@@ -14,6 +14,11 @@ Dokumen ini memetakan tujuh atribut kualitas produk perangkat lunak (Security, R
 
 Demo aplikasi (alur login 2FA, susun itinerary dengan AI, dashboard admin) dibawakan oleh Jose.
 
+Setiap bagian di bawah mencantumkan **commit terkait** yang menjadi bahan penjelasan atribut tersebut (lihat dengan `git show <hash>`). Dua commit besar mencakup beberapa atribut sekaligus, sehingga muncul di lebih dari satu bagian:
+
+- `00c1fea` *harden quality attributes* → Security, Reliability, Maintainability, Responsiveness, Usability
+- `d6b1897` *strengthen availability, resilience, responsiveness and usability* → Availability, Resilience, Responsiveness, Usability
+
 ---
 
 ## 1. Security
@@ -29,6 +34,17 @@ Demo aplikasi (alur login 2FA, susun itinerary dengan AI, dashboard admin) dibaw
 | Link email selalu dari `APP_URL` (mencegah *password reset poisoning*) | `app/Support/OutboundUrl.php` |
 | Auto-logout saat idle, halaman sensitif tidak di-cache | `LogoutIdleSessions.php`, `PreventSensitiveCaching.php` |
 | Dialog konfirmasi aman dari injeksi JavaScript | `resources/js/ux.js` (atribut `data-confirm`) |
+
+**Commit terkait (Jose):**
+- 2FA: `84ee034` kolom TOTP & service, `447c420` perangkat tepercaya, `d1a8fa3` setup TOTP wajib, `674c2c2` TwoFactorGate & challenge, `eaba215` login admin/Google lewat 2FA
+- Notifikasi & "Bukan saya": `0920dd8`, `bd85c56`, `40799c3`, `a2f1b9d`
+- Pengamanan token & recovery code: `7abe915`, `0726103`; reset 2FA oleh admin: `491bdd5`, `7fedc5d`
+- Auto-logout idle: `18a354a`
+- Password & kunci aplikasi: `502298a` rehash password, `319cd38` tolak APP_KEY otomatis di production
+- Cache halaman sensitif: `bd50731`, `4aafcda`, `0b7f7d6`
+- Library rawan: `607cd95`
+- `00c1fea` bagian Security (OutboundUrl, SecurityHeaders, rate limit daftar/reset password)
+- README: `2889ef9`
 
 **Keterbatasan:** CSP untuk `script-src` masih longgar karena masih ada script inline di view.
 
@@ -47,6 +63,12 @@ Demo aplikasi (alur login 2FA, susun itinerary dengan AI, dashboard admin) dibaw
 
 **Uji nyata (chaos test):** app1 dimatikan → web tetap 200; app1 + app2 dimatikan → halaman cadangan; Redis + replika dimatikan → web tetap 200 (~1 detik); semua dinyalakan → pulih sendiri.
 
+**Commit terkait (Anugrah):**
+- Fondasi & Docker: `0da864b` first commit, `d857657` Docker (app, nginx, MySQL, scheduler), `0c344c7` queue worker & syarat deploy
+- Deploy cloud: `accda8d` PaaS Railway + panduan IaaS/PaaS, `23e665f` script VM IaaS, `a60ecca` laporan & slide cloud computing
+- `d6b1897` bagian Availability (2 instance + failover Nginx, fallback.html, replika MySQL, `/health`, HealthAlerter, backup & restore)
+- Integrasi: `0198dd3` merge PR #1 (2FA), `18f338d` merge PR #2 (paket 1), `9d67302` merge branch availability
+
 **Keterbatasan:** semua container berjalan di satu mesin; bila database primary rusak total, pemulihan masih manual (restore dari backup).
 
 ## 3. Resilience
@@ -63,6 +85,10 @@ Demo aplikasi (alur login 2FA, susun itinerary dengan AI, dashboard admin) dibaw
 | Transaksi diulang saat deadlock; email dicoba ulang 5x dengan jeda bertahap | `app/Support/Transaction.php`, `app/Notifications/Concerns/RetriesDelivery.php` |
 | Pengingat H-1 terisolasi per itinerary dan dicoba ulang tiap jam | `app/Console/Commands/SendItineraryReminders.php` |
 
+**Commit terkait (Anugrah):**
+- `d6b1897` bagian Resilience (CircuitBreaker, cuaca *stale-if-error*, failover Redis, DatabaseOutage 503, retry deadlock & email, pengingat H-1)
+- `00c1fea` batas waktu total + model cadangan Gemini (`CallsGeminiApi`)
+
 ## 4. Reliability
 
 **Definisi:** sistem bekerja benar dan konsisten sesuai yang diharapkan.
@@ -75,6 +101,11 @@ Demo aplikasi (alur login 2FA, susun itinerary dengan AI, dashboard admin) dibaw
 | Backup diverifikasi (gzip utuh, dump lengkap, checksum SHA-256) | `BackupManager::verify()` |
 | 418 automated test + CI GitHub Actions di setiap push | `tests/`, `.github/workflows/tests.yml` |
 | Pengaman agar test tidak menghapus database development | `tests/TestCase.php` |
+
+**Commit terkait (Venessa):**
+- Validasi hari tutup destinasi: `5f68bd5`, `773d302`
+- `00c1fea` bagian Reliability (transaksi DB untuk urutkan itinerary & "Itinerary Hari Ini", 80+ test baru)
+- `02da314` test menolak berjalan di database non-test
 
 **Keterbatasan:** grafik dashboard admin memakai fungsi khusus MySQL sehingga tidak ikut diuji di SQLite.
 
@@ -89,6 +120,12 @@ Demo aplikasi (alur login 2FA, susun itinerary dengan AI, dashboard admin) dibaw
 | Gaya kode seragam (Laravel Pint) dicek otomatis di CI | `.github/workflows/tests.yml` |
 | Dokumentasi UML (PlantUML) dan panduan operasional | `docs/uml-plantuml/`, `docs/deployment/AVAILABILITY.md` |
 
+**Commit terkait (Venessa):**
+- `00c1fea` bagian Maintainability (CI GitHub Actions + Pint, hapus file tak terpakai)
+- Design spec & rencana implementasi: `4860d87`, `cefda2e`, `ac5b9f1`, `c35c3d4`
+- Diagram UML: `21c7d8d`, `64fb0f5`
+- Dokumentasi: `4c0f684` analisis kualitas, `8bf376d` & `7aad985` pembagian tugas, `a4fcbbb` README
+
 **Keterbatasan:** belum ada analisis statis (PHPStan) dan laporan *coverage*; infrastruktur Docker kini lebih banyak komponen yang harus dirawat.
 
 ## 6. Responsiveness
@@ -102,6 +139,11 @@ Demo aplikasi (alur login 2FA, susun itinerary dengan AI, dashboard admin) dibaw
 | Cache katalog, perbaikan query N+1 favorit, paginasi ulasan | `app/Support/CatalogCache.php`, `FavoriteLookup.php` |
 | Index database untuk query yang sering dipakai | `database/migrations/2026_11_05_000002_add_performance_indexes.php` |
 | Kompresi gzip dan cache permanen aset CSS/JS | `docker/nginx/app.conf` |
+
+**Commit terkait (Eunice):**
+- `d6b1897` bagian Responsiveness (antrean AI + halaman progres, index database, gzip & cache aset)
+- `00c1fea` bagian Performance (CatalogCache, perbaikan N+1 favorit, paginasi ulasan, lazy-load gambar)
+- Dokumentasi: `8336e5e`, `578e694` penjelasan Responsiveness & Usability
 
 **Keterbatasan:** waktu proses AI tetap 5–50 detik tergantung layanan Gemini.
 
@@ -118,6 +160,14 @@ Demo aplikasi (alur login 2FA, susun itinerary dengan AI, dashboard admin) dibaw
 | Peringatan saat meninggalkan form yang belum disimpan, banner offline | `resources/js/ux.js` |
 | Halaman error/gangguan yang ramah dan memuat ulang sendiri | `resources/views/errors/` |
 | Responsif di HP, bisa dipasang sebagai PWA | `public/sw.js`, `manifest.json` |
+
+**Commit terkait (Eunice):**
+- `d6b1897` bagian Usability (dialog konfirmasi aksesibel, submit lock, `aria-invalid`, banner offline)
+- `00c1fea` bagian Usability (terjemahan Bahasa Indonesia, halaman error ramah, label form)
+- Peringatan idle yang jelas: `4910d16`, `a5a1672`, `80843f9`, `11c531a`, `f63ce2a`
+- Profil keamanan & banner recovery code: `244ca5e`
+- Fitur itinerary: `89dffc3` & `4ba6d0a` estimasi biaya tiket, `8df1a56` & `d8aabdd` link share
+- README: `42fbb8a`
 
 **Keterbatasan:** belum diuji dengan pengguna nyata atau audit Lighthouse.
 
